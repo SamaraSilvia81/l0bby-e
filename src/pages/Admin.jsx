@@ -409,7 +409,7 @@ export default function Admin() {
                 style={{ minHeight:160, resize:'vertical', fontFamily:'var(--font-mono)', fontSize:'0.72rem', lineHeight:1.9 }}
                 placeholder={'Maria Silva, 2026-0001, DS_MOD1_A, senha123\nJoão Costa, 2026-0002, DS_MOD1_B'}
                 value={loteText}
-                onChange={e => { setLoteText(e.target.value); if(e.target.value.trim()) parseLote(e.target.value) else { setLotePreview([]); setLoteErrors([]) } }}
+                onChange={e => { setLoteText(e.target.value); if(e.target.value.trim()) parseLote(e.target.value); else { setLotePreview([]); setLoteErrors([]) } }}
               />
 
               {/* Erros de parse */}
