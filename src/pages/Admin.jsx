@@ -1,62 +1,116 @@
 import { useState, useEffect } from 'react'
-import { DB } from '../db/localDB'
+import { DB } from '../db/firebaseDB'
 import Navbar from '../components/Navbar'
 import { useToast } from '../context/ToastContext'
 import { useSound } from '../hooks/useSound'
 
-const BLANK = { title:'', dateLabel:'', date:'', hours:2, instructor:'', invitedBy:'', location:'', category:'FRONTEND', turmas:[], capacity:30, status:'open', summary:'', topics:[], tipo:'palestra', faz_parte_de:null, convites_permitidos:true, material_link:'', foto_palestrante:null }
+const BLANK = { title:'', dateLabel:'', date:'', hours:2, instructor:'', invitedBy:'ETE Cícero Dias', location:'', category:'FRONTEND', turmas:[], capacity:30, status:'open', summary:'', topics:[], tipo:'palestra', faz_parte_de:null, convites_permitidos:true, material_link:'', foto_palestrante:null }
 const TURMAS = ['DS_MOD1_A','DS_MOD1_B','DS_MOD3_A','DS_MOD3_B']
 
 export default function Admin() {
   const { toast } = useToast()
   const { play }  = useSound()
   const [tab, setTab]               = useState('events')
-  const [events, setEvents]         = useState(DB.getEvents())
-  const [students]                  = useState(DB.getStudents().filter(s => s.role==='student'))
-  const [categorias, setCategorias] = useState(DB.getCategorias())
+  const [events, setEvents]         = useState([])
+  const [students, setStudents]     = useState([])
+  const [categorias, setCategorias] = useState([])
   const [checkinEv, setCheckinEv]   = useState(null)
   const [checkins, setCheckins]     = useState({})
+  const [inscsByEvent, setInscsByEvent] = useState({})
   const [modal, setModal]           = useState(null)
   const [form, setForm]             = useState(BLANK)
   const [delConfirm, setDelConfirm] = useState(null)
   const [catForm, setCatForm]       = useState({ slug:'', label:'', cor:'#8F00FF' })
   const [editCat, setEditCat]       = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [totalInsc, setTotalInsc]   = useState(0)
+  const [totalPresent, setTotalPresent] = useState(0)
 
-  const refresh    = () => { setEvents(DB.getEvents()); setCategorias(DB.getCategorias()) }
-  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  // Formulário de novo aluno
+  const [stuForm, setStuForm] = useState({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
+  const [savingStu, setSavingStu] = useState(false)
+
+  const refresh = async () => {
+    const [evs, cats, stus, allInsc, allChks] = await Promise.all([
+      DB.getEvents(),
+      DB.getCategorias(),
+      DB.getStudents(),
+      DB.getInscriptions(),
+      DB.getCheckins(),
+    ])
+    setEvents(evs)
+    setCategorias(cats)
+    setStudents(stus.filter(s => s.role === 'student'))
+    setTotalInsc(allInsc.length)
+    setTotalPresent(allChks.filter(c => c.status === 'presente').length)
+    // Mapa: eventId → contagem inscritos
+    const imap = {}
+    allInsc.forEach(i => { imap[i.eventId] = (imap[i.eventId] || 0) + 1 })
+    setInscsByEvent(imap)
+    setLoading(false)
+  }
+
+  useEffect(() => { refresh() }, [])
 
   useEffect(() => {
     if (!checkinEv) return
-    const map = {}
-    DB.getCheckinsByEvent(checkinEv.id).forEach(c => { map[c.studentId] = c.status })
-    setCheckins(map)
+    const load = async () => {
+      const chks = await DB.getCheckinsByEvent(checkinEv.id)
+      const map = {}
+      chks.forEach(c => { map[c.studentId] = c.status })
+      setCheckins(map)
+    }
+    load()
   }, [checkinEv])
 
-  const handleSave = () => {
+  const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  const handleSave = async () => {
     if (!form.title.trim() || !form.instructor.trim()) { play('error'); toast('Preencha título e instrutor.','error'); return }
-    if (modal === 'create') DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
-    else                    DB.updateEvent(modal.id, form)
+    if (modal === 'create') await DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
+    else                    await DB.updateEvent(modal.id, form)
     play('success'); toast(modal==='create'?'Evento criado!':'Evento atualizado!','success')
-    refresh(); setModal(null)
+    await refresh(); setModal(null)
   }
 
-  const toggleCheckin = (stuId, status) => {
-    DB.setCheckin(stuId, checkinEv.id, status)
+  const toggleCheckin = async (stuId, status) => {
+    await DB.setCheckin(stuId, checkinEv.id, status)
     setCheckins(p => ({ ...p, [stuId]: status }))
     play(status==='presente'?'success':'error')
     toast(`${status==='presente'?'✓ Presença':'✗ Ausência'} registrada.`, status==='presente'?'success':'error')
   }
 
-  const totalInsc     = DB.getInscriptions().length
-  const totalCheckins = DB.getCheckins().filter(c => c.status==='presente').length
-  const openCount     = events.filter(e => e.status==='open').length
-
-  const saveCat = () => {
+  const saveCat = async () => {
     if (!catForm.slug.trim() || !catForm.label.trim()) { toast('Preencha slug e nome.','error'); return }
-    if (editCat) { DB.updateCategoria(editCat.id, catForm); toast('Categoria atualizada!','success') }
-    else         { DB.createCategoria({ ...catForm, slug: catForm.slug.toUpperCase() }); toast('Categoria criada!','success') }
-    play('success'); setCatForm({ slug:'', label:'', cor:'#8F00FF' }); setEditCat(null); refresh()
+    if (editCat) { await DB.updateCategoria(editCat.id, catForm); toast('Categoria atualizada!','success') }
+    else         { await DB.createCategoria({ ...catForm, slug: catForm.slug.toUpperCase() }); toast('Categoria criada!','success') }
+    play('success'); setCatForm({ slug:'', label:'', cor:'#8F00FF' }); setEditCat(null); await refresh()
   }
+
+  const saveStu = async () => {
+    if (!stuForm.name.trim() || !stuForm.matricula.trim() || !stuForm.pass.trim()) {
+      toast('Preencha nome, matrícula e senha.','error'); return
+    }
+    setSavingStu(true)
+    const existing = await DB.getStudentByMat(stuForm.matricula.trim())
+    if (existing) { toast('Matrícula já cadastrada!','error'); setSavingStu(false); return }
+    await DB.createStudent({ ...stuForm, matricula: stuForm.matricula.trim(), name: stuForm.name.trim() })
+    play('success'); toast('Aluno cadastrado!','success')
+    setStuForm({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
+    setSavingStu(false)
+    await refresh()
+  }
+
+  const openCount = events.filter(e => e.status==='open').length
+
+  if (loading) return (
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
+      <Navbar />
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+        // carregando painel...
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
@@ -65,10 +119,10 @@ export default function Admin() {
       {/* Bento stats */}
       <div className="bento-grid">
         {[
-          { label:'portal',      val:'ativo',       sub:'ETE Cícero Dias — Recife' },
-          { label:'events abertos', val:openCount,  sub:`${events.length} no total` },
-          { label:'inscrições',  val:totalInsc,     sub:'total geral' },
-          { label:'presenças',   val:totalCheckins, sub:'confirmadas via check-in' },
+          { label:'portal',         val:'ativo',       sub:'ETE Cícero Dias — Recife' },
+          { label:'events abertos', val:openCount,     sub:`${events.length} no total` },
+          { label:'inscrições',     val:totalInsc,     sub:'total geral' },
+          { label:'presenças',      val:totalPresent,  sub:'confirmadas via check-in' },
         ].map(({label,val,sub}) => (
           <div key={label} className="bento-cell">
             <span className="bento-label">{label}</span>
@@ -102,8 +156,7 @@ export default function Admin() {
         <div className="section" style={{ flex:1 }}>
           <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
             {events.map(ev => {
-              const cats = DB.getCategorias()
-              const catObj = cats.find(c => c.slug===ev.category)
+              const catObj = categorias.find(c => c.slug===ev.category)
               return (
                 <div key={ev.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'1rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
                   <div style={{ flex:1, minWidth:0 }}>
@@ -112,7 +165,7 @@ export default function Admin() {
                     </p>
                     <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>
                       {ev.dateLabel} · {ev.location} · {catObj?.label||ev.category} · {ev.tipo}
-                      {' '}· {DB.getInscriptionsByEvent(ev.id).length}/{ev.capacity} inscritos
+                      {' '}· {inscsByEvent[ev.id]||0}/{ev.capacity} inscritos
                     </p>
                   </div>
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
@@ -121,12 +174,17 @@ export default function Admin() {
                       check-in
                     </button>
                     <button className="btn btn-ghost btn-sm"
-                      onClick={() => { play('click'); setForm({...ev, turmas:ev.turmas||[]}); setModal(ev) }}>
+                      onClick={() => { play('click'); setForm({...ev, turmas:ev.turmas||[], topics:ev.topics||[]}); setModal(ev) }}>
                       editar
                     </button>
                     <button className="btn btn-ghost btn-sm"
                       style={{ color: ev.status==='open'?'var(--o)':'var(--text3)' }}
-                      onClick={() => { play('click'); DB.updateEvent(ev.id,{status:ev.status==='open'?'closed':'open'}); refresh(); toast(`Event ${ev.status==='open'?'encerrado':'reaberto'}.`,'info') }}>
+                      onClick={async () => {
+                        await DB.updateEvent(ev.id,{status:ev.status==='open'?'closed':'open'})
+                        await refresh()
+                        play('click')
+                        toast(`Event ${ev.status==='open'?'encerrado':'reaberto'}.`,'info')
+                      }}>
                       {ev.status==='open'?'encerrar':'reabrir'}
                     </button>
                     <button className="btn btn-danger btn-sm"
@@ -137,6 +195,11 @@ export default function Admin() {
                 </div>
               )
             })}
+            {events.length === 0 && (
+              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)', padding:'2rem 0' }}>
+                // nenhum evento cadastrado. Clique em "+ novo event" para começar.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -158,45 +221,24 @@ export default function Admin() {
                       <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{ev.dateLabel}</p>
                     </div>
                     <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--v-pale)' }}>
-                      {DB.getInscriptionsByEvent(ev.id).length} inscritos →
+                      {inscsByEvent[ev.id]||0} inscritos →
                     </span>
                   </div>
                 ))}
+                {events.filter(e=>e.status==='open').length === 0 && (
+                  <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+                    // nenhum event aberto no momento
+                  </p>
+                )}
               </div>
             </>
           ) : (
-            <>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.25rem', flexWrap:'wrap', gap:8 }}>
-                <div>
-                  <span className="tech-label" style={{ marginBottom:2 }}>check-in</span>
-                  <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.2rem', color:'var(--text)' }}>{checkinEv.title}</p>
-                </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => { play('nav'); setCheckinEv(null) }}>
-                  ← trocar event
-                </button>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
-                {DB.getInscriptionsByEvent(checkinEv.id).map(ins => {
-                  const stu = DB.getStudentById(ins.studentId)
-                  if (!stu) return null
-                  const status = checkins[stu.id] || null
-                  return (
-                    <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
-                      <div>
-                        <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
-                        <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
-                      </div>
-                      <div style={{ display:'flex', gap:6 }}>
-                        <button className={`btn btn-sm ${status==='presente'?'btn-success':'btn-ghost'}`}
-                          onClick={() => toggleCheckin(stu.id,'presente')}>✓ presente</button>
-                        <button className={`btn btn-sm ${status==='ausente'?'btn-danger':'btn-ghost'}`}
-                          onClick={() => toggleCheckin(stu.id,'ausente')}>✗ ausente</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
+            <CheckinPanel
+              checkinEv={checkinEv}
+              checkins={checkins}
+              onToggle={toggleCheckin}
+              onBack={() => { play('nav'); setCheckinEv(null) }}
+            />
           )}
         </div>
       )}
@@ -204,18 +246,68 @@ export default function Admin() {
       {/* Tab alunos */}
       {tab==='alunos' && (
         <div className="section" style={{ flex:1 }}>
-          <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
-            {students.map(stu => (
-              <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
-                <div>
-                  <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
-                  <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
-                </div>
-                <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)', border:'1px solid var(--border)', padding:'3px 10px' }}>
-                  {DB.getInscriptionsByStudent(stu.id).length} inscrição(ões)
-                </span>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2rem' }}>
+            {/* Lista */}
+            <div>
+              <p className="section-title" style={{ marginBottom:'1rem' }}>alunos cadastrados ({students.length})</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+                {students.map(stu => (
+                  <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                    <div>
+                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
+                    </div>
+                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                      <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', border:'1px solid var(--border)', padding:'2px 8px' }}>
+                        {stu.pass}
+                      </span>
+                      <button className="btn btn-danger btn-sm"
+                        onClick={async () => { await DB.deleteStudent(stu.id); play('error'); toast('Aluno removido.','info'); await refresh() }}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {students.length === 0 && (
+                  <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+                    // nenhum aluno cadastrado ainda
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
+            {/* Form novo aluno */}
+            <div>
+              <p className="section-title" style={{ marginBottom:'1rem' }}>cadastrar aluno</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:'0.9rem' }}>
+                <div>
+                  <label className="input-label">nome completo</label>
+                  <input className="input" value={stuForm.name} placeholder="Maria Silva"
+                    onChange={e => setStuForm(p=>({...p, name:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="input-label">matrícula</label>
+                  <input className="input" value={stuForm.matricula} placeholder="2026-0001"
+                    onChange={e => setStuForm(p=>({...p, matricula:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="input-label">turma</label>
+                  <select className="input" value={stuForm.turma} onChange={e => setStuForm(p=>({...p, turma:e.target.value}))}>
+                    {TURMAS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label">senha inicial</label>
+                  <input className="input" value={stuForm.pass} placeholder="senha123"
+                    onChange={e => setStuForm(p=>({...p, pass:e.target.value}))} />
+                  <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginTop:4, display:'block' }}>
+                    // o aluno usa essa senha para o primeiro acesso
+                  </span>
+                </div>
+                <button className="btn btn-v" onClick={saveStu} disabled={savingStu} onMouseEnter={() => play('hover')}>
+                  {savingStu ? '// salvando...' : 'cadastrar aluno →'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -224,7 +316,6 @@ export default function Admin() {
       {tab==='categorias' && (
         <div className="section" style={{ flex:1 }}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2rem' }}>
-            {/* Lista */}
             <div>
               <p className="section-title" style={{ marginBottom:'1rem' }}>categorias existentes</p>
               <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
@@ -243,7 +334,7 @@ export default function Admin() {
                         editar
                       </button>
                       <button className="btn btn-danger btn-sm"
-                        onClick={() => { DB.deleteCategoria(cat.id); play('error'); toast('Categoria removida.','info'); refresh() }}>
+                        onClick={async () => { await DB.deleteCategoria(cat.id); play('error'); toast('Categoria removida.','info'); await refresh() }}>
                         ✕
                       </button>
                     </div>
@@ -251,7 +342,6 @@ export default function Admin() {
                 ))}
               </div>
             </div>
-            {/* Form nova / editar */}
             <div>
               <p className="section-title" style={{ marginBottom:'1rem' }}>{editCat?'editar categoria':'nova categoria'}</p>
               <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
@@ -299,13 +389,13 @@ export default function Admin() {
             </div>
             <div className="modal-body">
               {[
-                {label:'título',      key:'title',      ph:'React UI Masterclass'},
-                {label:'instrutor',   key:'instructor', ph:'Prof. Nome Sobrenome'},
-                {label:'convidado por',key:'invitedBy', ph:'Coordenação DS'},
-                {label:'local',       key:'location',   ph:'Laboratório 03'},
-                {label:'data label',  key:'dateLabel',  ph:'20 ABR 2026'},
-                {label:'data (YYYY-MM-DD)',key:'date',   ph:'2026-04-20'},
-                {label:'link material (opcional)',key:'material_link', ph:'https://...'},
+                {label:'título',       key:'title',        ph:'React UI Masterclass'},
+                {label:'instrutor',    key:'instructor',   ph:'Prof. Nome Sobrenome'},
+                {label:'convidado por',key:'invitedBy',    ph:'Coordenação DS'},
+                {label:'local',        key:'location',     ph:'Laboratório 03'},
+                {label:'data label',   key:'dateLabel',    ph:'20 ABR 2026'},
+                {label:'data (YYYY-MM-DD)', key:'date',    ph:'2026-04-20'},
+                {label:'link material (opcional)', key:'material_link', ph:'https://...'},
               ].map(({label,key,ph}) => (
                 <div key={key}>
                   <label className="input-label">{label}</label>
@@ -343,14 +433,14 @@ export default function Admin() {
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {TURMAS.map(t => (
                     <button key={t} type="button"
-                      className={`chip ${form.turmas.includes(t)?'active':''}`}
-                      onClick={() => f('turmas', form.turmas.includes(t)?form.turmas.filter(x=>x!==t):[...form.turmas,t])}>
+                      className={`chip ${(form.turmas||[]).includes(t)?'active':''}`}
+                      onClick={() => f('turmas', (form.turmas||[]).includes(t)?(form.turmas||[]).filter(x=>x!==t):[...(form.turmas||[]),t])}>
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
-              <div style={{ display:'flex', gap:'1rem' }}>
+              <div>
                 <label style={{ display:'flex', alignItems:'center', gap:8, fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--text2)', cursor:'pointer' }}>
                   <input type="checkbox" checked={form.convites_permitidos}
                     onChange={e => f('convites_permitidos',e.target.checked)} />
@@ -388,7 +478,7 @@ export default function Admin() {
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setDelConfirm(null)}>cancelar</button>
               <button className="btn btn-danger"
-                onClick={() => { DB.deleteEvent(delConfirm); refresh(); setDelConfirm(null); play('error'); toast('Event removido.','info') }}>
+                onClick={async () => { await DB.deleteEvent(delConfirm); await refresh(); setDelConfirm(null); play('error'); toast('Event removido.','info') }}>
                 confirmar exclusão
               </button>
             </div>
@@ -401,5 +491,64 @@ export default function Admin() {
         <span>ETE Cícero Dias · desenvolvimento de sistemas</span>
       </footer>
     </div>
+  )
+}
+
+// Componente separado pra check-in com carregamento dos inscritos
+function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
+  const [inscStudents, setInscStudents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      const inscs = await DB.getInscriptionsByEvent(checkinEv.id)
+      const stuList = (await Promise.all(inscs.map(i => DB.getStudentById(i.studentId)))).filter(Boolean)
+      setInscStudents(stuList)
+      setLoading(false)
+    }
+    load()
+  }, [checkinEv.id])
+
+  return (
+    <>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.25rem', flexWrap:'wrap', gap:8 }}>
+        <div>
+          <span className="tech-label" style={{ marginBottom:2 }}>check-in</span>
+          <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.2rem', color:'var(--text)' }}>{checkinEv.title}</p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>
+          ← trocar event
+        </button>
+      </div>
+      {loading ? (
+        <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// carregando inscritos...</p>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+          {inscStudents.map(stu => {
+            const status = checkins[stu.id] || null
+            return (
+              <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                <div>
+                  <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
+                  <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
+                </div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button className={`btn btn-sm ${status==='presente'?'btn-success':'btn-ghost'}`}
+                    onClick={() => onToggle(stu.id,'presente')}>✓ presente</button>
+                  <button className={`btn btn-sm ${status==='ausente'?'btn-danger':'btn-ghost'}`}
+                    onClick={() => onToggle(stu.id,'ausente')}>✗ ausente</button>
+                </div>
+              </div>
+            )
+          })}
+          {inscStudents.length === 0 && (
+            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+              // nenhum aluno inscrito neste event ainda
+            </p>
+          )}
+        </div>
+      )}
+    </>
   )
 }

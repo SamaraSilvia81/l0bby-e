@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { DB } from '../db/localDB'
+import { DB } from '../db/firebaseDB'
 
 const AuthContext = createContext(null)
 
@@ -10,14 +10,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const stored = sessionStorage.getItem('lobby_session')
     if (stored) {
-      const student = DB.getStudentById(stored)
-      if (student) setUser(student)
+      DB.getStudentById(stored)
+        .then(student => { if (student) setUser(student) })
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
-  const login = (matricula, pass) => {
-    const student = DB.getStudentByMat(matricula)
+  const login = async (matricula, pass) => {
+    const student = await DB.getStudentByMat(matricula)
     if (!student)              return { ok: false, msg: 'Matrícula não encontrada.' }
     if (student.pass !== pass) return { ok: false, msg: 'Senha incorreta.' }
     sessionStorage.setItem('lobby_session', student.id)

@@ -13,23 +13,22 @@ export default function Login() {
   const [pass, setPass] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); play('click'); setLoading(true)
-    setTimeout(() => {
-      const result = login(mat.trim(), pass.trim())
-      if (result.ok) {
-        play('success'); toast('Acesso concedido!', 'success')
-        navigate(mat.startsWith('COORD') ? '/admin' : '/home')
-      } else {
-        play('error'); toast(result.msg, 'error')
-      }
-      setLoading(false)
-    }, 350)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    play('click')
+    setLoading(true)
+    const result = await login(mat.trim(), pass.trim())
+    if (result.ok) {
+      play('success'); toast('Acesso concedido!', 'success')
+      navigate(mat.toUpperCase().startsWith('COORD') ? '/admin' : '/home')
+    } else {
+      play('error'); toast(result.msg, 'error')
+    }
+    setLoading(false)
   }
 
   return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
-      {/* Navbar simplificada com botão voltar */}
       <nav>
         <span className="nav-logo" style={{ cursor:'default' }}>
           l<span className="z">0</span>bby<sup style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.42em', color:'var(--o)', verticalAlign:'super' }}>-E</sup>
@@ -87,10 +86,10 @@ export default function Login() {
             </button>
           </form>
           <div style={{ marginTop:'1.5rem', padding:'0.85rem 1rem', background:'var(--v-dim)', border:'1px solid var(--border)' }}>
-            <span className="tech-label" style={{ marginBottom:'0.4rem' }}>credenciais_demo</span>
+            <span className="tech-label" style={{ marginBottom:'0.4rem' }}>acesso</span>
             <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--text3)', lineHeight:2 }}>
-              <span style={{ color:'var(--v-pale)' }}>aluno  </span>2026-0041 / 1234<br/>
-              <span style={{ color:'var(--o)' }}>admin  </span>COORD-001 / admin
+              <span style={{ color:'var(--o)' }}>admin  </span>COORD-001 / (sua senha)<br/>
+              <span style={{ color:'var(--v-pale)' }}>aluno  </span>matrícula / senha inicial
             </div>
           </div>
         </div>
