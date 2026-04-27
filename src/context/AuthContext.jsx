@@ -24,7 +24,13 @@ export function AuthProvider({ children }) {
     if (student.pass !== pass) return { ok: false, msg: 'Senha incorreta.' }
     sessionStorage.setItem('lobby_session', student.id)
     setUser(student)
-    return { ok: true }
+    return { ok: true, firstAccess: student.firstAccess === true }
+  }
+
+  const changePassword = async (newPass) => {
+    if (!user) return
+    await DB.updateStudent(user.id, { pass: newPass, firstAccess: false })
+    setUser(u => ({ ...u, pass: newPass, firstAccess: false }))
   }
 
   const logout = () => {
@@ -34,7 +40,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, login, logout, loading,
+      user, login, logout, loading, changePassword,
       isAdmin: user?.role === 'admin',
     }}>
       {children}

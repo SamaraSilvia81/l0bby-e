@@ -30,6 +30,14 @@ export default function Admin() {
   const [stuForm, setStuForm] = useState({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
   const [savingStu, setSavingStu] = useState(false)
 
+  // Importação em lote
+  const [loteText, setLoteText]       = useState('')
+  const [lotePreview, setLotePreview] = useState([])
+  const [loteErrors, setLoteErrors]   = useState([])
+  const [loteStatus, setLoteStatus]   = useState(null) // null | 'importing' | 'done'
+  const [loteProgress, setLoteProgress] = useState(0)
+  const [alunoTab, setAlunoTab]       = useState('individual') // 'individual' | 'lote'
+
   const refresh = async () => {
     const [evs, cats, stus, allInsc, allChks] = await Promise.all([
       DB.getEvents(),
@@ -87,6 +95,53 @@ export default function Admin() {
     play('success'); setCatForm({ slug:'', label:'', cor:'#8F00FF' }); setEditCat(null); await refresh()
   }
 
+  // Parseia o texto colado no formato: Nome Completo,matricula,turma,senha
+  const parseLote = (text) => {
+    const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean)
+    const items = []; const errs = []
+    lines.forEach((line, i) => {
+      // Suporta vírgula, ponto-e-vírgula ou tab como separador
+      const parts = line.split(/[,;\t]/).map(p => p.trim())
+      if (parts.length < 3) {
+        errs.push(`Linha ${i+1}: precisa de pelo menos 3 colunas (nome, matrícula, turma)`)
+        return
+      }
+      const [name, matricula, turma, pass] = parts
+      if (!name || !matricula || !turma) {
+        errs.push(`Linha ${i+1}: nome, matrícula ou turma em branco`)
+        return
+      }
+      items.push({ name, matricula, turma, pass: pass || matricula, curso: 'Desenvolvimento de Sistemas', firstAccess: true })
+    })
+    setLotePreview(items)
+    setLoteErrors(errs)
+    setLoteStatus(null)
+    setLoteProgress(0)
+  }
+
+  const importarLote = async () => {
+    if (lotePreview.length === 0) return
+    setLoteStatus('importing')
+    let ok = 0
+    for (let i = 0; i < lotePreview.length; i++) {
+      const stu = lotePreview[i]
+      try {
+        const existing = await DB.getStudentByMat(stu.matricula)
+        if (!existing) {
+          await DB.createStudent(stu)
+          ok++
+        }
+      } catch (_) {}
+      setLoteProgress(Math.round(((i + 1) / lotePreview.length) * 100))
+    }
+    play('success')
+    toast(`${ok} aluno(s) importado(s)!`, 'success')
+    setLoteStatus('done')
+    setLoteText('')
+    setLotePreview([])
+    await refresh()
+  }
+
   const saveStu = async () => {
     if (!stuForm.name.trim() || !stuForm.matricula.trim() || !stuForm.pass.trim()) {
       toast('Preencha nome, matrícula e senha.','error'); return
@@ -94,7 +149,7 @@ export default function Admin() {
     setSavingStu(true)
     const existing = await DB.getStudentByMat(stuForm.matricula.trim())
     if (existing) { toast('Matrícula já cadastrada!','error'); setSavingStu(false); return }
-    await DB.createStudent({ ...stuForm, matricula: stuForm.matricula.trim(), name: stuForm.name.trim() })
+    await DB.createStudent({ ...stuForm, matricula: stuForm.matricula.trim(), name: stuForm.name.trim(), firstAccess: true })
     play('success'); toast('Aluno cadastrado!','success')
     setStuForm({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
     setSavingStu(false)
@@ -246,15 +301,33 @@ export default function Admin() {
       {/* Tab alunos */}
       {tab==='alunos' && (
         <div className="section" style={{ flex:1 }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2rem' }}>
-            {/* Lista */}
+          {/* Sub-abas */}
+          <div style={{ display:'flex', gap:1, marginBottom:'1.5rem', borderBottom:'1px solid var(--border)', paddingBottom:'0.75rem' }}>
+            {[['individual','+ cadastrar individual'],['lote','⬆ importar em lote']].map(([key,label]) => (
+              <button key={key}
+                className={`btn btn-sm ${alunoTab===key?'btn-v':'btn-ghost'}`}
+                onClick={() => { play('nav'); setAlunoTab(key) }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista de alunos — sempre visível */}
+          <div style={{ display:'grid', gridTemplateColumns: alunoTab==='lote' ? '1fr' : '1fr 1fr', gap:'2rem' }}>
             <div>
               <p className="section-title" style={{ marginBottom:'1rem' }}>alunos cadastrados ({students.length})</p>
               <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
                 {students.map(stu => (
                   <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                     <div>
-                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>
+                        {stu.name}
+                        {stu.firstAccess && (
+                          <span style={{ marginLeft:8, fontFamily:'var(--font-mono)', fontSize:'0.5rem', color:'var(--o)', border:'1px solid var(--o)', padding:'1px 6px', verticalAlign:'middle' }}>
+                            1º acesso
+                          </span>
+                        )}
+                      </p>
                       <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
                     </div>
                     <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -275,40 +348,126 @@ export default function Admin() {
                 )}
               </div>
             </div>
-            {/* Form novo aluno */}
-            <div>
-              <p className="section-title" style={{ marginBottom:'1rem' }}>cadastrar aluno</p>
-              <div style={{ display:'flex', flexDirection:'column', gap:'0.9rem' }}>
-                <div>
-                  <label className="input-label">nome completo</label>
-                  <input className="input" value={stuForm.name} placeholder="Maria Silva"
-                    onChange={e => setStuForm(p=>({...p, name:e.target.value}))} />
+
+            {/* Form individual */}
+            {alunoTab==='individual' && (
+              <div>
+                <p className="section-title" style={{ marginBottom:'1rem' }}>cadastrar aluno</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:'0.9rem' }}>
+                  <div>
+                    <label className="input-label">nome completo</label>
+                    <input className="input" value={stuForm.name} placeholder="Maria Silva"
+                      onChange={e => setStuForm(p=>({...p, name:e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="input-label">matrícula</label>
+                    <input className="input" value={stuForm.matricula} placeholder="2026-0001"
+                      onChange={e => setStuForm(p=>({...p, matricula:e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="input-label">turma</label>
+                    <select className="input" value={stuForm.turma} onChange={e => setStuForm(p=>({...p, turma:e.target.value}))}>
+                      {TURMAS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="input-label">senha inicial</label>
+                    <input className="input" value={stuForm.pass} placeholder="senha123"
+                      onChange={e => setStuForm(p=>({...p, pass:e.target.value}))} />
+                    <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginTop:4, display:'block' }}>
+                      // aluno troca a senha no primeiro acesso
+                    </span>
+                  </div>
+                  <button className="btn btn-v" onClick={saveStu} disabled={savingStu} onMouseEnter={() => play('hover')}>
+                    {savingStu ? '// salvando...' : 'cadastrar aluno →'}
+                  </button>
                 </div>
-                <div>
-                  <label className="input-label">matrícula</label>
-                  <input className="input" value={stuForm.matricula} placeholder="2026-0001"
-                    onChange={e => setStuForm(p=>({...p, matricula:e.target.value}))} />
-                </div>
-                <div>
-                  <label className="input-label">turma</label>
-                  <select className="input" value={stuForm.turma} onChange={e => setStuForm(p=>({...p, turma:e.target.value}))}>
-                    {TURMAS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="input-label">senha inicial</label>
-                  <input className="input" value={stuForm.pass} placeholder="senha123"
-                    onChange={e => setStuForm(p=>({...p, pass:e.target.value}))} />
-                  <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginTop:4, display:'block' }}>
-                    // o aluno usa essa senha para o primeiro acesso
-                  </span>
-                </div>
-                <button className="btn btn-v" onClick={saveStu} disabled={savingStu} onMouseEnter={() => play('hover')}>
-                  {savingStu ? '// salvando...' : 'cadastrar aluno →'}
-                </button>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Importação em lote */}
+          {alunoTab==='lote' && (
+            <div style={{ marginTop:'2rem' }}>
+              <p className="section-title" style={{ marginBottom:'0.5rem' }}>importar em lote</p>
+              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)', marginBottom:'1rem', lineHeight:1.8 }}>
+                Cole abaixo uma lista no formato: <span style={{ color:'var(--v-pale)' }}>nome, matrícula, turma, senha</span><br />
+                Uma linha por aluno. Vírgula, ponto-e-vírgula ou tab como separador.<br />
+                Se a senha for omitida, a matrícula é usada como senha inicial. Todo aluno importado terá<span style={{ color:'var(--o)' }}> primeiro acesso</span> ativado.
+              </p>
+
+              {/* Exemplo */}
+              <div style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.75rem 1rem', marginBottom:'1rem', fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)', lineHeight:2 }}>
+                <span style={{ color:'var(--text3)' }}>// exemplo:</span><br />
+                Maria Silva, 2026-0001, DS_MOD1_A, senha123<br />
+                João Costa, 2026-0002, DS_MOD1_B<br />
+                Ana Souza; 2026-0003; DS_MOD3_A; minhasenha
+              </div>
+
+              <textarea
+                className="input"
+                style={{ minHeight:160, resize:'vertical', fontFamily:'var(--font-mono)', fontSize:'0.72rem', lineHeight:1.9 }}
+                placeholder={'Maria Silva, 2026-0001, DS_MOD1_A, senha123\nJoão Costa, 2026-0002, DS_MOD1_B'}
+                value={loteText}
+                onChange={e => { setLoteText(e.target.value); if(e.target.value.trim()) parseLote(e.target.value) else { setLotePreview([]); setLoteErrors([]) } }}
+              />
+
+              {/* Erros de parse */}
+              {loteErrors.length > 0 && (
+                <div style={{ marginTop:'0.75rem', padding:'0.75rem 1rem', background:'rgba(255,59,59,0.07)', border:'1px solid var(--danger)' }}>
+                  {loteErrors.map((e,i) => (
+                    <p key={i} style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--danger)', lineHeight:1.8 }}>⚠ {e}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview */}
+              {lotePreview.length > 0 && (
+                <div style={{ marginTop:'1rem' }}>
+                  <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)', marginBottom:'0.5rem' }}>
+                    // {lotePreview.length} aluno(s) encontrado(s):
+                  </p>
+                  <div style={{ display:'flex', flexDirection:'column', gap:1, maxHeight:220, overflowY:'auto' }}>
+                    {lotePreview.map((s,i) => (
+                      <div key={i} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.6rem 1rem', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div>
+                          <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.75rem', color:'var(--text)' }}>{s.name}</span>
+                          <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginLeft:12 }}>{s.matricula} · {s.turma}</span>
+                        </div>
+                        <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', border:'1px solid var(--border)', padding:'1px 8px' }}>{s.pass}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Barra de progresso */}
+                  {loteStatus === 'importing' && (
+                    <div style={{ marginTop:'1rem' }}>
+                      <div style={{ height:4, background:'var(--border)', marginBottom:6 }}>
+                        <div style={{ height:'100%', background:'var(--v)', width:`${loteProgress}%`, transition:'width 0.2s' }} />
+                      </div>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>
+                        // importando... {loteProgress}%
+                      </p>
+                    </div>
+                  )}
+
+                  {loteStatus === 'done' && (
+                    <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--success)', marginTop:'1rem' }}>
+                      ✓ importação concluída!
+                    </p>
+                  )}
+
+                  {loteStatus !== 'importing' && loteStatus !== 'done' && (
+                    <button className="btn btn-v" style={{ marginTop:'1rem' }}
+                      onClick={importarLote}
+                      onMouseEnter={() => play('hover')}>
+                      importar {lotePreview.length} aluno(s) →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

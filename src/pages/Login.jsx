@@ -20,7 +20,11 @@ export default function Login() {
     const result = await login(mat.trim(), pass.trim())
     if (result.ok) {
       play('success'); toast('Acesso concedido!', 'success')
-      navigate(mat.toUpperCase().startsWith('COORD') ? '/admin' : '/home')
+      if (result.firstAccess) {
+        navigate('/primeiro-acesso', { replace: true })
+      } else {
+        navigate(mat.toUpperCase().startsWith('COORD') ? '/admin' : '/home')
+      }
     } else {
       play('error'); toast(result.msg, 'error')
     }
