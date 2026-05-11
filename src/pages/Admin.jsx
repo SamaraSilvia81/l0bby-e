@@ -736,6 +736,9 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
         const evOptions = events.filter(ev => ev.status === 'closed')
         const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
         const presentStudents = students.filter(s => certCheckins.includes(s.id))
+        console.log('certCheckins:', certCheckins.slice(0,3))
+        console.log('students ids:', students.slice(0,3).map(s => s.id))
+        console.log('match:', presentStudents.length)
 
         const handleEvChange = async (evId) => {
           setCertEvFilter(evId)
