@@ -38,8 +38,10 @@ export default function Admin() {
   const [loteStatus, setLoteStatus]   = useState(null) // null | 'importing' | 'done'
   const [loteProgress, setLoteProgress] = useState(0)
   const [alunoTab, setAlunoTab]       = useState('individual') // 'individual' | 'lote'
-  const [certTarget, setCertTarget]   = useState(null) // { event, student }
+  const [certTarget, setCertTarget]     = useState(null) // { event, student }
   const [certEvFilter, setCertEvFilter] = useState('all')
+  const [certCheckins, setCertCheckins] = useState([])
+  const [certLoading, setCertLoading]   = useState(false)
 
   const refresh = async () => {
     const [evs, cats, stus, allInsc, allChks] = await Promise.all([
@@ -62,6 +64,22 @@ export default function Admin() {
   }
 
   useEffect(() => { refresh() }, [])
+
+  useEffect(() => {
+    if (tab === 'certificados') {
+      const evOptions = events.filter(ev => ev.status === 'closed')
+      if (evOptions.length === 0) return
+      const first = evOptions[0]
+      if (certEvFilter === 'all' || certEvFilter === first.id) {
+        setCertLoading(true)
+        DB.getCheckinsByEvent(first.id).then(chks => {
+          setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
+          if (certEvFilter === 'all') setCertEvFilter(first.id)
+          setCertLoading(false)
+        })
+      }
+    }
+  }, [tab, events])
 
   useEffect(() => {
     if (!checkinEv) return
@@ -715,20 +733,23 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
       {tab==='certificados' && (() => {
         const evOptions = events.filter(ev => ev.status === 'closed')
         const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
-        const evCheckins = selectedEv
-          ? Object.entries(checkins)
-              .filter(([key]) => key.startsWith(selectedEv.id))
-              .filter(([, status]) => status === 'presente')
-              .map(([key]) => key.replace(selectedEv.id + '_', ''))
-          : []
-        const presentStudents = students.filter(s => evCheckins.includes(s.id))
+        const presentStudents = students.filter(s => certCheckins.includes(s.id))
+
+        const handleEvChange = async (evId) => {
+          setCertEvFilter(evId)
+          setCertLoading(true)
+          const chks = await DB.getCheckinsByEvent(evId)
+          setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
+          setCertLoading(false)
+        }
+
         return (
           <div style={{ padding:'2rem' }}>
             <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
               <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
               <select
                 value={certEvFilter === 'all' && evOptions[0] ? evOptions[0].id : certEvFilter}
-                onChange={e => setCertEvFilter(e.target.value)}
+                onChange={e => handleEvChange(e.target.value)}
                 style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
                 {evOptions.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
@@ -743,6 +764,10 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
             {!selectedEv ? (
               <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
                 // nenhum evento encerrado ainda
+              </p>
+            ) : certLoading ? (
+              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+                // carregando presenças...
               </p>
             ) : presentStudents.length === 0 ? (
               <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
