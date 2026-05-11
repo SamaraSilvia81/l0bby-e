@@ -41,7 +41,7 @@ export default function Admin() {
   const [certTarget, setCertTarget]     = useState(null) // { event, student }
   const [certEvFilter, setCertEvFilter] = useState('all')
   const [certCheckins, setCertCheckins] = useState([])
-  const [certLoading, setCertLoading]   = useState(false)
+  const [certLoading, setCertLoading]   = useState(true)
   const [certStudents, setCertStudents] = useState([])
 
   const refresh = async () => {
@@ -54,6 +54,17 @@ export default function Admin() {
     ])
     setEvents(evs)
     setCategorias(cats)
+    // Pre-calcular alunos presentes para aba certificados
+    const closedEvs = evs.filter(ev => ev.status === 'closed')
+    if (closedEvs.length > 0) {
+      const firstEv = closedEvs[0]
+      const chks = allChks.filter(c => c.eventId === firstEv.id && (c.checkin === true || c.status === 'presente'))
+      const ids = chks.map(c => c.studentId)
+      setCertCheckins(ids)
+      setCertStudents(stus.filter(s => ids.includes(s.id)))
+      setCertEvFilter(firstEv.id)
+      setCertLoading(false)
+    }
     setStudents(stus.filter(s => s.role === 'student'))
     setTotalInsc(allInsc.length)
     setTotalPresent(allChks.filter(c => c.status === 'presente').length)
@@ -66,22 +77,7 @@ export default function Admin() {
 
   useEffect(() => { refresh() }, [])
 
-  useEffect(() => {
-    if (tab === 'certificados' && students.length > 0 && events.length > 0) {
-      const evOptions = events.filter(ev => ev.status === 'closed')
-      if (evOptions.length === 0) return
-      const first = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
-      setCertLoading(true)
-      DB.getCheckins().then(allChks => {
-        const chks = allChks.filter(c => c.eventId === first.id)
-        const ids = chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId)
-        setCertCheckins(ids)
-        setCertStudents(students.filter(s => ids.includes(s.id)))
-        setCertEvFilter(first.id)
-        setCertLoading(false)
-      })
-    }
-  }, [tab, events, students])
+  // cert tab loads on demand via handleEvChange
 
   useEffect(() => {
     if (!checkinEv) return
