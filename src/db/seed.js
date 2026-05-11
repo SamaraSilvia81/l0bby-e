@@ -1,94 +1,65 @@
 // ─────────────────────────────────────────────────────────────
 //  L0bby-E — Seed Firebase
-//  Roda UMA VEZ pra popular o banco com dados reais.
-//  Como usar:
-//    1. Coloque suas credenciais no .env
-//    2. npm install (caso não tenha feito)
-//    3. node src/db/seed.js
-//
-//  ATENÇÃO: Rode apenas em ambiente de desenvolvimento.
-//  Não commite este arquivo com dados sensíveis.
+//  Evento: Direito para Designers e Desenvolvedores
+//  Palestrante: Carolinne Varella — 15 ABR 2026 — 2h
 // ─────────────────────────────────────────────────────────────
 
-// Este seed é feito para ser colado no Console do Firebase
-// (Firestore → Start collection) ou rodado via Admin SDK.
-//
-// Cole os objetos abaixo diretamente no Firestore Console
-// ou adapte para usar o firebase-admin se preferir CLI.
-
 // ── CATEGORIAS ────────────────────────────────────────────────
-// Coleção: categorias
 const CATEGORIAS = [
-  { id: 'cat-1', slug: 'FRONTEND',    label: 'Frontend',     cor: '#8F00FF' },
-  { id: 'cat-2', slug: 'BACKEND',     label: 'Backend',      cor: '#00e5ff' },
-  { id: 'cat-3', slug: 'DESIGN',      label: 'Design',       cor: '#FF7927' },
-  { id: 'cat-4', slug: 'DEVOPS',      label: 'DevOps',       cor: '#39ff14' },
-  { id: 'cat-5', slug: 'DADOS',       label: 'Dados',        cor: '#FF3B8A' },
-  { id: 'cat-6', slug: 'SEGURANCA',   label: 'Segurança',    cor: '#FFD700' },
-  { id: 'cat-7', slug: 'NEGOCIOS',    label: 'Negócios',     cor: '#FF6B6B' },
-  { id: 'cat-8', slug: 'MARKETING',   label: 'Marketing',    cor: '#4ECDC4' },
+  { id: 'cat-1', slug: 'FRONTEND',  label: 'Frontend',  cor: '#8F00FF' },
+  { id: 'cat-2', slug: 'BACKEND',   label: 'Backend',   cor: '#00e5ff' },
+  { id: 'cat-3', slug: 'DESIGN',    label: 'Design',    cor: '#FF7927' },
+  { id: 'cat-4', slug: 'DEVOPS',    label: 'DevOps',    cor: '#39ff14' },
+  { id: 'cat-5', slug: 'DADOS',     label: 'Dados',     cor: '#FF3B8A' },
+  { id: 'cat-6', slug: 'SEGURANCA', label: 'Segurança', cor: '#FFD700' },
+  { id: 'cat-7', slug: 'NEGOCIOS',  label: 'Negócios',  cor: '#FF6B6B' },
+  { id: 'cat-8', slug: 'MARKETING', label: 'Marketing', cor: '#4ECDC4' },
+  { id: 'cat-9', slug: 'DIREITO',   label: 'Direito',   cor: '#00C49A' },
 ]
 
-// ── EVENTOS ───────────────────────────────────────────────────
-// Coleção: events
-// Os dois primeiros são os eventos reais que já aconteceram.
+// ── EVENTO — DIREITOS AUTORAIS ────────────────────────────────
 const EVENTS = [
-  // ── EVENTOS JÁ REALIZADOS ──────────────────────────────────
   {
-    id: 'ev-edu-fin',
+    id: 'ev-dir-aut',
     tipo: 'palestra',
     faz_parte_de: null,
-    title: 'EDUCAÇÃO FINANCEIRA',
-    date: '2025-10-15',           // ← ajuste a data real
-    dateLabel: '15 OUT 2025',     // ← ajuste a data real
+    title: 'DIREITO PARA DESIGNERS E DESENVOLVEDORES',
+    date: '2026-04-15',
+    dateLabel: '15 ABR 2026',
     hours: 2,
-    instructor: '',               // ← nome do palestrante
+    instructor: 'Carolinne Varella',
     foto_palestrante: null,
     invitedBy: 'ETE Cícero Dias',
-    location: '',                 // ← laboratório ou auditório
-    category: 'NEGOCIOS',
-    turmas: [],                   // ← ex: ['DS_MOD1_A', 'DS_MOD3_B']
-    capacity: 50,
+    location: 'Auditório',
+    category: 'DIREITO',
+    turmas: ['DG_MOD_ANOS', 'DG_MOD_A', 'DS_MOD1_B'],
+    capacity: 60,
     status: 'closed',
     convites_permitidos: false,
-    summary: 'Palestra sobre educação financeira: planejamento pessoal, investimentos e independência financeira para jovens.',
-    topics: ['Planejamento financeiro', 'Investimentos', 'Independência financeira'],
+    summary: 'Palestra sobre direitos autorais, propriedade intelectual e proteção de carreira para designers e desenvolvedores, ministrada pela advogada especialista Carolinne Varella.',
+    topics: [
+      'Direitos autorais',
+      'Propriedade intelectual',
+      'Proteção de criações digitais',
+      'Contratos para freelancers',
+      'Uso de imagens e fontes licenciadas',
+    ],
     material_link: null,
     fotos_registro: [],
     banner: null,
   },
-  {
-    id: 'ev-mkt-dig',
-    tipo: 'palestra',
-    faz_parte_de: null,
-    title: 'MARKETING DIGITAL',
-    date: '2025-11-20',           // ← ajuste a data real
-    dateLabel: '20 NOV 2025',     // ← ajuste a data real
-    hours: 2,
-    instructor: '',               // ← nome do palestrante
-    foto_palestrante: null,
-    invitedBy: 'ETE Cícero Dias',
-    location: '',                 // ← laboratório ou auditório
-    category: 'MARKETING',
-    turmas: [],                   // ← ex: ['DS_MOD3_A']
-    capacity: 50,
-    status: 'closed',
-    convites_permitidos: false,
-    summary: 'Introdução ao marketing digital: redes sociais, SEO, Google Ads e como construir presença online para pequenos negócios.',
-    topics: ['Redes sociais', 'SEO', 'Google Ads', 'Presença digital'],
-    material_link: null,
-    fotos_registro: [],
-    banner: null,
-  },
-  // ── ADICIONE MAIS EVENTOS AQUI ─────────────────────────────
-  // Copie o bloco acima e preencha os campos com ← nos comentários
 ]
 
 // ── ALUNOS ────────────────────────────────────────────────────
-// Coleção: students
-// role: 'student' para alunos, 'admin' para coordenação
+// 36 alunos + 1 admin
+// IDs gerados: stu-dg-001..008 (DG anos anteriores)
+//              stu-dg-101..114 (DG turma A)
+//              stu-ds-001..014 (DS)
+// Senhas iniciais: '2026' — orientar alunos a trocar no 1º acesso
+// Matrículas: placeholder — substitua pelas matrículas reais da escola
+
 const STUDENTS = [
-  // ── ADMIN ─────────────────────────────────────────────────
+  // ── ADMIN ──────────────────────────────────────────────────
   {
     id: 'adm-1',
     name: 'Coordenação DS',
@@ -96,40 +67,80 @@ const STUDENTS = [
     turma: null,
     curso: null,
     role: 'admin',
-    pass: 'admin2026',    // ← MUDE ESSA SENHA!
+    pass: 'admin2026',
   },
 
-  // ── ALUNOS (exemplos — substitua pelos reais) ──────────────
-  // {
-  //   id: 'stu-001',
-  //   name: 'Nome Completo do Aluno',
-  //   matricula: '2026-0001',   // matrícula da escola
-  //   turma: 'DS_MOD1_A',       // ex: DS_MOD1_A, DS_MOD3_B
-  //   curso: 'Desenvolvimento de Sistemas',
-  //   role: 'student',
-  //   pass: '1234',             // senha inicial (aluno pode não ter como trocar ainda)
-  // },
+  // ── DESIGN GRÁFICO — ANOS ANTERIORES (DG_MOD_ANOS) ─────────
+  { id: 'stu-dg-001', name: 'Sued Navaro Souza dos Santos',     matricula: 'DG-2026-001', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-002', name: 'Ana Paula Emídio de Medeiros',     matricula: 'DG-2026-002', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-003', name: 'Elda Eliza Rodrigues dos Santos',  matricula: 'DG-2026-003', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-004', name: 'Gustavo Vieira Milei',             matricula: 'DG-2026-004', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-005', name: 'Karen Vitória Cândido da Silva',   matricula: 'DG-2026-005', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-006', name: 'Karolyne Sales Ramalho',           matricula: 'DG-2026-006', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-007', name: 'Lázaro Luiz Matias Vieira',        matricula: 'DG-2026-007', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+  { id: 'stu-dg-008', name: 'Lucas Felipe de Melo Ramos Silva', matricula: 'DG-2026-008', turma: 'DG_MOD_ANOS', curso: 'Design Gráfico',           role: 'student', pass: '2026' },
+
+  // ── DESIGN GRÁFICO — TURMA A (DG_MOD_A) ───────────────────
+  { id: 'stu-dg-101', name: 'Amanda Maria Galindo Costa Silva',       matricula: 'DG-2026-101', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-102', name: 'Guilherme Nunes Marques',                matricula: 'DG-2026-102', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-103', name: 'Guilherme Hernando de Souza',            matricula: 'DG-2026-103', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-104', name: 'Ludmyla Monteiro Barreto',               matricula: 'DG-2026-104', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-105', name: 'Carlos Eduardo da Silva Lima',           matricula: 'DG-2026-105', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-106', name: 'Carlos Eduardo da Silva Diniz',          matricula: 'DG-2026-106', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-107', name: 'Dayvson Farias dos Santos',              matricula: 'DG-2026-107', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-108', name: 'Damyane Emanuelly Lopes da Silva Duarte',matricula: 'DG-2026-108', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-109', name: 'Vania Francisca do Nascimento',          matricula: 'DG-2026-109', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-110', name: 'Mayra Marielly dos Santos Ferreira',     matricula: 'DG-2026-110', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-111', name: 'Jennifer Emylle Lopes Nascimento',       matricula: 'DG-2026-111', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-112', name: 'Matheus Alefe Bezerra da Silva',         matricula: 'DG-2026-112', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-113', name: 'Estevao Jose dos Santos Chagas',         matricula: 'DG-2026-113', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+  { id: 'stu-dg-114', name: 'Ana Beatriz Alves Silva',                matricula: 'DG-2026-114', turma: 'DG_MOD_A', curso: 'Design Gráfico', role: 'student', pass: '2026' },
+
+  // ── DESENVOLVIMENTO DE SISTEMAS (DS_MOD) ────────────────────
+  { id: 'stu-ds-001', name: 'Ronaldo Ribeiro Dionizio da Silva', matricula: 'DS-2026-001', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-002', name: 'João Pedro Rodrigues Viana',        matricula: 'DS-2026-002', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-003', name: 'Thallys Vinícius Lopes da Rocha',   matricula: 'DS-2026-003', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-004', name: 'Bruna Maria do N. Costa',           matricula: 'DS-2026-004', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-005', name: 'Yasmin Lauryn Francine',            matricula: 'DS-2026-005', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-006', name: 'Luiz Henrique',                     matricula: 'DS-2026-006', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-007', name: 'Maria Luisa Rodrigues',             matricula: 'DS-2026-007', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-008', name: 'Matheus Eduardo',                   matricula: 'DS-2026-008', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-009', name: 'João Guilherme',                    matricula: 'DS-2026-009', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-010', name: 'Emilly Maria',                      matricula: 'DS-2026-010', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-011', name: 'Álvaro Miguel',                     matricula: 'DS-2026-011', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-012', name: 'João Gabriel C. C. Loureiro',       matricula: 'DS-2026-012', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-013', name: 'Miguel Gonçalves Arcanjo',          matricula: 'DS-2026-013', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
+  { id: 'stu-ds-014', name: 'Magali França',                     matricula: 'DS-2026-014', turma: 'DS_MOD1_B', curso: 'Desenvolvimento de Sistemas', role: 'student', pass: '2026' },
 ]
 
+// ── CHECKINS — todos presentes no ev-dir-aut ──────────────────
+const CHECKINS_DIR_AUT = [
+  'stu-dg-001','stu-dg-002','stu-dg-003','stu-dg-004',
+  'stu-dg-005','stu-dg-006','stu-dg-007','stu-dg-008',
+  'stu-dg-101','stu-dg-102','stu-dg-103','stu-dg-104',
+  'stu-dg-105','stu-dg-106','stu-dg-107','stu-dg-108',
+  'stu-dg-109','stu-dg-110','stu-dg-111','stu-dg-112',
+  'stu-dg-113','stu-dg-114',
+  'stu-ds-001','stu-ds-002','stu-ds-003','stu-ds-004',
+  'stu-ds-005','stu-ds-006','stu-ds-007','stu-ds-008',
+  'stu-ds-009','stu-ds-010','stu-ds-011','stu-ds-012',
+  'stu-ds-013','stu-ds-014',
+].map(studentId => ({
+  eventId: 'ev-dir-aut',
+  studentId,
+  checkin: true,
+  checkinAt: '2026-04-15T00:00:00.000Z',
+}))
+
 // ─────────────────────────────────────────────────────────────
-//  COMO POPULAR O FIREBASE (sem código extra)
+console.log('Seed ready.')
+console.log('CATEGORIAS:', CATEGORIAS.length)
+console.log('EVENTS:', EVENTS.length)
+console.log('STUDENTS:', STUDENTS.length, '(1 admin + 36 alunos)')
+console.log('CHECKINS ev-dir-aut:', CHECKINS_DIR_AUT.length, 'alunos')
+
 // ─────────────────────────────────────────────────────────────
-//
-//  OPÇÃO A — Console Web (mais fácil, recomendada):
-//  1. Acesse console.firebase.google.com
-//  2. Selecione seu projeto → Firestore Database
-//  3. "+ Start collection" → nome: "categorias"
-//  4. Para cada item em CATEGORIAS acima, clique "+ Add document"
-//     - Document ID: use o id (ex: cat-1)
-//     - Adicione os campos: slug, label, cor
-//  5. Repita para "events" (usando os objetos em EVENTS)
-//  6. Repita para "students" (usando os objetos em STUDENTS)
-//
-//  OPÇÃO B — Script Node.js com firebase-admin:
-//  1. npm install firebase-admin --save-dev
-//  2. Baixe a serviceAccountKey.json do Firebase Console
-//     (Project Settings → Service accounts → Generate new private key)
-//  3. Adapte o código abaixo:
+//  COMO POPULAR (firebase-admin):
 //
 //  import admin from 'firebase-admin'
 //  import { readFileSync } from 'fs'
@@ -138,22 +149,16 @@ const STUDENTS = [
 //  const db = admin.firestore()
 //
 //  async function seed() {
-//    for (const cat of CATEGORIAS) {
-//      await db.collection('categorias').doc(cat.id).set(cat)
-//    }
-//    for (const ev of EVENTS) {
-//      await db.collection('events').doc(ev.id).set(ev)
-//    }
-//    for (const stu of STUDENTS) {
-//      await db.collection('students').doc(stu.id).set(stu)
+//    for (const cat of CATEGORIAS) await db.collection('categorias').doc(cat.id).set(cat)
+//    for (const ev  of EVENTS)     await db.collection('events').doc(ev.id).set(ev)
+//    for (const stu of STUDENTS)   await db.collection('students').doc(stu.id).set(stu)
+//    for (const chk of CHECKINS_DIR_AUT) {
+//      const key = `${chk.eventId}_${chk.studentId}`
+//      await db.collection('checkins').doc(key).set(chk)
 //    }
 //    console.log('✓ Seed completo!')
 //  }
 //  seed()
-//
 // ─────────────────────────────────────────────────────────────
 
-console.log('Seed data ready. Veja os comentários acima para instruções.')
-console.log('CATEGORIAS:', CATEGORIAS.length)
-console.log('EVENTS:',     EVENTS.length)
-console.log('STUDENTS:',   STUDENTS.length)
+export { CATEGORIAS, EVENTS, STUDENTS, CHECKINS_DIR_AUT }

@@ -7,7 +7,7 @@ import { DB } from '../db/firebaseDB'
 import Navbar from '../components/Navbar'
 import CertModal from '../components/CertModal'
 
-const CAT_COLOR = { FRONTEND:'#8F00FF', BACKEND:'#00e5ff', DESIGN:'#FF7927', DEVOPS:'#39ff14', DADOS:'#FF3B8A', SEGURANCA:'#FFD700', NEGOCIOS:'#FF6B6B', MARKETING:'#4ECDC4' }
+const CAT_COLOR = { FRONTEND:'#8F00FF', BACKEND:'#00e5ff', DESIGN:'#FF7927', DEVOPS:'#39ff14', DADOS:'#FF3B8A', SEGURANCA:'#FFD700', NEGOCIOS:'#FF6B6B', MARKETING:'#4ECDC4', DIREITO:'#00C49A' }
 
 export default function Details() {
   const { id } = useParams()
@@ -164,7 +164,7 @@ export default function Details() {
                 {event.category}
               </div>
             )}
-            <div style={{ position:'absolute', bottom:'1rem', right:'1rem', fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.1em', color:catColor, border:`1px solid ${catColor}`, padding:'3px 8px', background:'rgba(8,8,8,0.7)' }}>
+            <div style={{ position:'absolute', bottom:'1rem', right:'1rem', fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.1em', color:catColor, border:`1px solid ${catColor}`, padding:'3px 8px', background:'var(--bg)' }}>
               {event.dateLabel}
             </div>
             {isAdmin && (
@@ -293,7 +293,9 @@ export default function Details() {
             { label:'local',        val: event.location },
             { label:'carga',        val: `${event.hours} horas` },
             { label:'inscritos',    val: `${inscs.length} de ${event.capacity}` },
-            { label:'vagas livres', val: String(spotsLeft), warn: spotsLeft <= 5 },
+            isClosed
+              ? { label:'presentes confirmados', val: `${inscs.length} alunos` }
+              : { label:'vagas livres', val: String(spotsLeft), warn: spotsLeft <= 5 },
           ].map(({label,val,warn}) => (
             <div key={label} style={{ display:'flex', flexDirection:'column', gap:3 }}>
               <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.14em', color:'var(--text3)', textTransform:'uppercase' }}>
