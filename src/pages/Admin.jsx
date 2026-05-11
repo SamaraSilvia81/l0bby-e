@@ -42,6 +42,7 @@ export default function Admin() {
   const [certEvFilter, setCertEvFilter] = useState('all')
   const [certCheckins, setCertCheckins] = useState([])
   const [certLoading, setCertLoading]   = useState(false)
+  const [certStudents, setCertStudents] = useState([])
 
   const refresh = async () => {
     const [evs, cats, stus, allInsc, allChks] = await Promise.all([
@@ -74,9 +75,8 @@ export default function Admin() {
       DB.getCheckins().then(allChks => {
         const chks = allChks.filter(c => c.eventId === first.id)
         const ids = chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId)
-        console.log('checkins ids:', ids.slice(0,3))
-        console.log('students ids:', students.slice(0,3).map(s => s.id))
         setCertCheckins(ids)
+        setCertStudents(students.filter(s => ids.includes(s.id)))
         setCertEvFilter(first.id)
         setCertLoading(false)
       })
@@ -735,7 +735,7 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
       {tab==='certificados' && (() => {
         const evOptions = events.filter(ev => ev.status === 'closed')
         const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
-        const presentStudents = students.filter(s => certCheckins.includes(s.id))
+        const presentStudents = certStudents
 
         const handleEvChange = async (evId) => {
           setCertEvFilter(evId)
@@ -743,7 +743,9 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
           const allChks = await DB.getCheckins()
           const chks = allChks.filter(c => c.eventId === evId)
           console.log('checkins encontrados:', chks.length, chks)
-          setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
+          const ids2 = chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId)
+          setCertCheckins(ids2)
+          setCertStudents(students.filter(s => ids2.includes(s.id)))
           setCertLoading(false)
         }
 
