@@ -53,8 +53,14 @@ function AppRoutes() {
 }
 
 export default function App() {
-  const [isDark, setIsDark] = useState(true)
-  useEffect(() => { document.body.classList.toggle('light', !isDark) }, [isDark])
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('lobby-theme')
+    return saved !== null ? saved === 'dark' : true
+  })
+  useEffect(() => {
+    document.body.classList.toggle('light', !isDark)
+    localStorage.setItem('lobby-theme', isDark ? 'dark' : 'light')
+  }, [isDark])
   return (
     <ThemeContext.Provider value={{ isDark, toggle: () => setIsDark(d => !d) }}>
       <BrowserRouter>

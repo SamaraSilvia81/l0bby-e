@@ -7,7 +7,7 @@ import { DB } from '../db/firebaseDB'
 import Navbar from '../components/Navbar'
 import CertModal from '../components/CertModal'
 
-const CAT_COLOR = { FRONTEND:'#8F00FF', BACKEND:'#00e5ff', DESIGN:'#FF7927', DEVOPS:'#39ff14', DADOS:'#FF3B8A', SEGURANCA:'#FFD700', NEGOCIOS:'#FF6B6B', MARKETING:'#4ECDC4' }
+const CAT_COLOR = { FRONTEND:'#8F00FF', BACKEND:'#00e5ff', DESIGN:'#FF7927', DEVOPS:'#39ff14', DADOS:'#FF3B8A', SEGURANCA:'#FFD700', NEGOCIOS:'#FF6B6B', MARKETING:'#4ECDC4', DIREITO:'#00C49A' }
 
 export default function Details() {
   const { id } = useParams()
@@ -31,10 +31,11 @@ export default function Details() {
 
   const load = async () => {
     setLoading(true)
-    const [ev, inscList] = await Promise.all([
-      DB.getEventById(id),
-      DB.getInscriptionsByEvent(id),
-    ])
+    const ev = await DB.getEventById(id)
+    const isClosed = ev?.status === 'closed'
+    const inscList = isClosed
+      ? await DB.getCheckinsByEvent(id)
+      : await DB.getInscriptionsByEvent(id)
     setEvent(ev)
     setInscs(inscList)
     if (user) {
@@ -104,15 +105,22 @@ export default function Details() {
     }
   }
 
-  const handleFotoUpload = (e) => {
+  const handleFotoUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = async (ev) => {
-      await DB.addFotoRegistro(id, ev.target.result)
+    try {
+      toast('Enviando foto...', 'info')
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('upload_preset', 'L0bby-e')
+      const res = await fetch('https://api.cloudinary.com/v1_1/dvib5lqwd/image/upload', { method:'POST', body: fd })
+      const data = await res.json()
+      if (!data.secure_url) throw new Error('Upload falhou')
+      await DB.addFotoRegistro(id, data.secure_url)
       toast('Foto adicionada!', 'success'); play('success'); load()
+    } catch(err) {
+      console.error(err); toast('Erro ao enviar foto.', 'error')
     }
-    reader.readAsDataURL(file)
   }
 
   const fotos = event?.fotos_registro || []
@@ -120,6 +128,10 @@ export default function Details() {
   return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <Navbar />
+
+      {/* Blobs de fundo — fixos, não scrollam */}
+      <div style={{ position:'fixed', width:600, height:600, top:'calc(50vh - 300px)', left:-200, background:'radial-gradient(circle, rgba(143,0,255,0.09) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+      <div style={{ position:'fixed', width:500, height:500, top:'calc(50vh - 250px)', right:-150, background:'radial-gradient(circle, rgba(255,121,39,0.07) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', minHeight:'42vh', borderBottom:'1px solid var(--border)' }}>
         <div style={{ padding:'3rem 2.5rem', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', justifyContent:'flex-end', gap:'0.75rem', position:'relative' }}>
@@ -164,7 +176,7 @@ export default function Details() {
                 {event.category}
               </div>
             )}
-            <div style={{ position:'absolute', bottom:'1rem', right:'1rem', fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.1em', color:catColor, border:`1px solid ${catColor}`, padding:'3px 8px', background:'rgba(8,8,8,0.7)' }}>
+            <div style={{ position:'absolute', bottom:'1rem', right:'1rem', fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.1em', color:catColor, border:`1px solid ${catColor}`, padding:'3px 8px', background:'var(--bg)' }}>
               {event.dateLabel}
             </div>
             {isAdmin && (
@@ -176,11 +188,21 @@ export default function Details() {
             )}
             {isAdmin && (
               <input id="foto-pal-inp" type="file" accept="image/*" style={{ display:'none' }}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files[0]; if (!file) return
-                  const r = new FileReader()
-                  r.onload = async (ev) => { await DB.updateEvent(id, { foto_palestrante: ev.target.result }); load(); toast('Foto atualizada!','success') }
-                  r.readAsDataURL(file)
+                  try {
+                    toast('Enviando foto...', 'info')
+                    const fd = new FormData()
+                    fd.append('file', file)
+                    fd.append('upload_preset', 'L0bby-e')
+                    const res = await fetch('https://api.cloudinary.com/v1_1/dvib5lqwd/image/upload', { method:'POST', body: fd })
+                    const data = await res.json()
+                    if (!data.secure_url) throw new Error('Upload falhou')
+                    await DB.updateEvent(id, { foto_palestrante: data.secure_url })
+                    load(); toast('Foto atualizada!', 'success')
+                  } catch(err) {
+                    console.error(err); toast('Erro ao enviar foto.', 'error')
+                  }
                 }} />
             )}
           </div>
@@ -293,7 +315,9 @@ export default function Details() {
             { label:'local',        val: event.location },
             { label:'carga',        val: `${event.hours} horas` },
             { label:'inscritos',    val: `${inscs.length} de ${event.capacity}` },
-            { label:'vagas livres', val: String(spotsLeft), warn: spotsLeft <= 5 },
+            isClosed
+              ? { label:'presentes confirmados', val: `${inscs.length} alunos` }
+              : { label:'vagas livres', val: String(spotsLeft), warn: spotsLeft <= 5 },
           ].map(({label,val,warn}) => (
             <div key={label} style={{ display:'flex', flexDirection:'column', gap:3 }}>
               <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.52rem', fontWeight:700, letterSpacing:'0.14em', color:'var(--text3)', textTransform:'uppercase' }}>

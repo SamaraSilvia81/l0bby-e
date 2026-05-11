@@ -82,7 +82,7 @@ export default function Home() {
         <div className="hero-left">
           <div className="hero-tag">ETE Cícero Dias · Desenvolvimento de Sistemas</div>
           <h1 className="hero-h1">
-            GAME<br/><span className="accent">DAY</span><br/><span className="orange">2026.</span>
+            TODO MÊS<br/><span className="accent">TEM</span><br/><span className="orange">ALGO NOVO.</span>
           </h1>
           <p className="hero-desc">
             Palestras, workshops e eventos técnicos do curso.
