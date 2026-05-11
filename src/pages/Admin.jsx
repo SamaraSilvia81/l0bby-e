@@ -3,6 +3,7 @@ import { DB } from '../db/firebaseDB'
 import Navbar from '../components/Navbar'
 import { useToast } from '../context/ToastContext'
 import { useSound } from '../hooks/useSound'
+import CertModal from '../components/CertModal'
 
 const BLANK = { title:'', dateLabel:'', date:'', hours:2, instructor:'', invitedBy:'ETE Cícero Dias', location:'', category:'FRONTEND', turmas:[], capacity:30, status:'open', summary:'', topics:[], tipo:'palestra', faz_parte_de:null, convites_permitidos:true, material_link:'', foto_palestrante:null }
 const TURMAS = ['DS_MOD1_A','DS_MOD1_B','DS_MOD3_A','DS_MOD3_B']
@@ -37,6 +38,8 @@ export default function Admin() {
   const [loteStatus, setLoteStatus]   = useState(null) // null | 'importing' | 'done'
   const [loteProgress, setLoteProgress] = useState(0)
   const [alunoTab, setAlunoTab]       = useState('individual') // 'individual' | 'lote'
+  const [certTarget, setCertTarget]   = useState(null) // { event, student }
+  const [certEvFilter, setCertEvFilter] = useState('all')
 
   const refresh = async () => {
     const [evs, cats, stus, allInsc, allChks] = await Promise.all([
@@ -189,7 +192,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <div className="tab-bar">
-        {['events','check-in','alunos','categorias'].map(t => (
+        {['events','check-in','alunos','categorias','certificados'].map(t => (
           <button key={t} className={`tab ${tab===t?'active':''}`}
             onClick={() => { play('nav'); setTab(t) }}>
             {t}
@@ -708,6 +711,72 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
           )}
         </div>
       )}
+      {/* ── ABA CERTIFICADOS ─────────────────────────────── */}
+      {tab==='certificados' && (() => {
+        const evOptions = events.filter(ev => ev.status === 'closed')
+        const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
+        const evCheckins = selectedEv
+          ? Object.entries(checkins)
+              .filter(([key]) => key.startsWith(selectedEv.id))
+              .filter(([, status]) => status === 'presente')
+              .map(([key]) => key.replace(selectedEv.id + '_', ''))
+          : []
+        const presentStudents = students.filter(s => evCheckins.includes(s.id))
+        return (
+          <div style={{ padding:'2rem' }}>
+            <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
+              <select
+                value={certEvFilter === 'all' && evOptions[0] ? evOptions[0].id : certEvFilter}
+                onChange={e => setCertEvFilter(e.target.value)}
+                style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
+                {evOptions.map(ev => (
+                  <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
+                ))}
+              </select>
+              {selectedEv && (
+                <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
+                  {presentStudents.length} aluno(s) com presença confirmada
+                </span>
+              )}
+            </div>
+            {!selectedEv ? (
+              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+                // nenhum evento encerrado ainda
+              </p>
+            ) : presentStudents.length === 0 ? (
+              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
+                // nenhum aluno com presença confirmada neste evento
+              </p>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+                {presentStudents.map(stu => (
+                  <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                    <div>
+                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula}{stu.turma ? ` · ${stu.turma}` : ''}</p>
+                    </div>
+                    <button className="btn btn-v btn-sm"
+                      onClick={() => { play('click'); setCertTarget({ event: selectedEv, student: stu }) }}
+                      onMouseEnter={() => play('hover')}>
+                      ★ gerar certificado
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {certTarget && (
+        <CertModal
+          event={certTarget.event}
+          student={certTarget.student}
+          onClose={() => setCertTarget(null)}
+        />
+      )}
+
     </>
   )
 }
