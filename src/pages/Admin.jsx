@@ -731,56 +731,39 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
         </div>
       )}
       {/* ── ABA CERTIFICADOS ─────────────────────────────── */}
-      {tab==='certificados' && (() => {
-        const evOptions = events.filter(ev => ev.status === 'closed')
-        const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
-        const presentStudents = certStudents
-
-        const handleEvChange = async (evId) => {
-          setCertEvFilter(evId)
-          setCertLoading(true)
-          const allChks = await DB.getCheckins()
-          const chks = allChks.filter(c => c.eventId === evId)
-          console.log('checkins encontrados:', chks.length, chks)
-          const ids2 = chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId)
-          setCertCheckins(ids2)
-          setCertStudents(students.filter(s => ids2.includes(s.id)))
-          setCertLoading(false)
-        }
-
-        return (
-          <div style={{ padding:'2rem' }}>
-            <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-              <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
-              <select
-                value={certEvFilter === 'all' && evOptions[0] ? evOptions[0].id : certEvFilter}
-                onChange={e => handleEvChange(e.target.value)}
-                style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
-                {evOptions.map(ev => (
-                  <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
-                ))}
-              </select>
-              {selectedEv && (
-                <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
-                  {presentStudents.length} aluno(s) com presença confirmada
-                </span>
-              )}
-            </div>
-            {!selectedEv ? (
-              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
-                // nenhum evento encerrado ainda
-              </p>
-            ) : certLoading ? (
-              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
-                // carregando presenças...
-              </p>
-            ) : presentStudents.length === 0 ? (
-              <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>
-                // nenhum aluno com presença confirmada neste evento
-              </p>
-            ) : (
-              <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
-                {presentStudents.map(stu => (
+      {tab==='certificados' && (
+        <div style={{ padding:'2rem' }}>
+          <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
+            <select
+              value={events.filter(ev=>ev.status==='closed').find(ev=>ev.id===certEvFilter)?.id || events.filter(ev=>ev.status==='closed')[0]?.id || ''}
+              onChange={async e => {
+                const evId = e.target.value
+                setCertEvFilter(evId)
+                setCertLoading(true)
+                const allChks = await DB.getCheckins()
+                const ids = allChks.filter(c => c.eventId === evId && (c.checkin === true || c.status === 'presente')).map(c => c.studentId)
+                setCertStudents(students.filter(s => ids.includes(s.id)))
+                setCertLoading(false)
+              }}
+              style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
+              {events.filter(ev=>ev.status==='closed').map(ev => (
+                <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
+              ))}
+            </select>
+            <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
+              {certStudents.length} aluno(s) com presença confirmada
+            </span>
+          </div>
+          {certLoading ? (
+            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// carregando...</p>
+          ) : certStudents.length === 0 ? (
+            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// nenhum aluno com presença confirmada</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+              {certStudents.map(stu => {
+                const selectedEv = events.find(ev => ev.id === certEvFilter)
+                return (
                   <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                     <div>
                       <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
@@ -792,12 +775,12 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
                       ★ gerar certificado
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })()}
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {certTarget && (
         <CertModal
