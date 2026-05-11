@@ -58,13 +58,16 @@ export default function Admin() {
     const closedEvs = evs.filter(ev => ev.status === 'closed')
     if (closedEvs.length > 0) {
       const firstEv = closedEvs[0]
-      const chks = allChks.filter(c => c.eventId === firstEv.id && (c.checkin === true || c.status === 'presente'))
-      const ids = chks.map(c => c.studentId)
+      const chks = allChks.filter(c => c.eventId === firstEv.id)
+      const ids = chks
+        .filter(c => c.checkin === true || c.checkin === 'true' || c.status === 'presente')
+        .map(c => c.studentId)
+      const matched = stus.filter(s => ids.includes(s.id))
       setCertCheckins(ids)
-      setCertStudents(stus.filter(s => ids.includes(s.id)))
+      setCertStudents(matched)
       setCertEvFilter(firstEv.id)
-      setCertLoading(false)
     }
+    setCertLoading(false)
     setStudents(stus.filter(s => s.role === 'student'))
     setTotalInsc(allInsc.length)
     setTotalPresent(allChks.filter(c => c.status === 'presente').length)
