@@ -72,7 +72,9 @@ export default function Admin() {
       const first = evOptions[0]
       if (certEvFilter === 'all' || certEvFilter === first.id) {
         setCertLoading(true)
-        DB.getCheckinsByEvent(first.id).then(chks => {
+        DB.getCheckins().then(allChks => {
+          const chks = allChks.filter(c => c.eventId === first.id)
+          console.log('checkins iniciais:', chks.length, chks)
           setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
           if (certEvFilter === 'all') setCertEvFilter(first.id)
           setCertLoading(false)
@@ -738,7 +740,9 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
         const handleEvChange = async (evId) => {
           setCertEvFilter(evId)
           setCertLoading(true)
-          const chks = await DB.getCheckinsByEvent(evId)
+          const allChks = await DB.getCheckins()
+          const chks = allChks.filter(c => c.eventId === evId)
+          console.log('checkins encontrados:', chks.length, chks)
           setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
           setCertLoading(false)
         }
