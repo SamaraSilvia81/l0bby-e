@@ -66,22 +66,22 @@ export default function Admin() {
   useEffect(() => { refresh() }, [])
 
   useEffect(() => {
-    if (tab === 'certificados') {
+    if (tab === 'certificados' && students.length > 0 && events.length > 0) {
       const evOptions = events.filter(ev => ev.status === 'closed')
       if (evOptions.length === 0) return
-      const first = evOptions[0]
-      if (certEvFilter === 'all' || certEvFilter === first.id) {
-        setCertLoading(true)
-        DB.getCheckins().then(allChks => {
-          const chks = allChks.filter(c => c.eventId === first.id)
-          console.log('checkins iniciais:', chks.length, chks)
-          setCertCheckins(chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId))
-          if (certEvFilter === 'all') setCertEvFilter(first.id)
-          setCertLoading(false)
-        })
-      }
+      const first = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
+      setCertLoading(true)
+      DB.getCheckins().then(allChks => {
+        const chks = allChks.filter(c => c.eventId === first.id)
+        const ids = chks.filter(c => c.checkin === true || c.status === 'presente').map(c => c.studentId)
+        console.log('checkins ids:', ids.slice(0,3))
+        console.log('students ids:', students.slice(0,3).map(s => s.id))
+        setCertCheckins(ids)
+        setCertEvFilter(first.id)
+        setCertLoading(false)
+      })
     }
-  }, [tab, events])
+  }, [tab, events, students])
 
   useEffect(() => {
     if (!checkinEv) return
@@ -736,9 +736,6 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
         const evOptions = events.filter(ev => ev.status === 'closed')
         const selectedEv = evOptions.find(ev => ev.id === certEvFilter) || evOptions[0]
         const presentStudents = students.filter(s => certCheckins.includes(s.id))
-        console.log('certCheckins:', certCheckins.slice(0,3))
-        console.log('students ids:', students.slice(0,3).map(s => s.id))
-        console.log('match:', presentStudents.length)
 
         const handleEvChange = async (evId) => {
           setCertEvFilter(evId)
