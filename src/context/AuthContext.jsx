@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, login, logout, loading, changePassword,
+      user, setUser, login, logout, loading, changePassword,
       isAdmin: user?.role === 'admin',
     }}>
       {children}

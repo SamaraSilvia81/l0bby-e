@@ -18,6 +18,7 @@ export default function Navbar() {
       </Link>
       <div className="nav-links">
         <Link to="/home"    className={a('/home')}    onClick={() => play('nav')}>events</Link>
+        <Link to="/ranking" className={a('/ranking')} onClick={() => play('nav')}>ranking</Link>
         {user && !isAdmin && (
           <Link to="/profile" className={a('/profile')} onClick={() => play('nav')}>meu painel</Link>
         )}

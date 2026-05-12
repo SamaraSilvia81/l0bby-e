@@ -8,6 +8,7 @@ import Home        from './pages/Home'
 import Details     from './pages/Details'
 import Profile     from './pages/Profile'
 import Admin       from './pages/Admin'
+import Ranking     from './pages/Ranking'
 
 export const ThemeContext = createContext({ isDark: true, toggle: () => {} })
 export const useTheme = () => useContext(ThemeContext)
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Route path="/details/:id"     element={<Details />} />
       <Route path="/profile"         element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/admin"           element={<PrivateRoute adminOnly><Admin /></PrivateRoute>} />
+      <Route path="/ranking"          element={<Ranking />} />
       <Route path="*"                element={<Navigate to="/home" replace />} />
     </Routes>
   )

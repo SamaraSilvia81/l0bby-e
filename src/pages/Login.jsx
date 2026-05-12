@@ -25,6 +25,8 @@ export default function Login() {
   const [cMat,  setCMat]        = useState('')
   const [cSenha, setCSenha]     = useState('')
   const [cConfirm, setCConfirm] = useState('')
+  const [cCurso, setCCurso]     = useState('Desenvolvimento de Sistemas')
+  const [cTurma, setCTurma]     = useState('DS_MOD1_A')
   const [showPass, setShowPass]       = useState(false)
   const [showCPass, setShowCPass]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -56,7 +58,7 @@ export default function Login() {
     try {
       const existing = await DB.getStudentByMat(cMat.trim())
       if (existing) { play('error'); toast('Matrícula já cadastrada. Faça login.', 'error'); setLoading(false); return }
-      await DB.createStudent({ name: cNome.trim(), matricula: cMat.trim(), pass: cSenha, turma: null, curso: null, firstAccess: false })
+      await DB.createStudent({ name: cNome.trim(), matricula: cMat.trim(), pass: cSenha, turma: cTurma, curso: cCurso, firstAccess: false })
       play('success'); toast('Cadastro realizado! Faça login.', 'success')
       setTab('login'); setMat(cMat.trim())
       setCNome(''); setCMat(''); setCSenha(''); setCConfirm('')
@@ -64,6 +66,11 @@ export default function Login() {
       play('error'); toast('Erro ao cadastrar. Tente novamente.', 'error'); console.error(err)
     }
     setLoading(false)
+  }
+
+  const turmasByCurso = {
+    'Desenvolvimento de Sistemas': ['DS_MOD1_A','DS_MOD1_B','DS_MOD3_A','DS_MOD3_B'],
+    'Design Gráfico': ['DG_MOD_A','DG_MOD_B','DG_MOD_ANOS'],
   }
 
   const switchLabel = tab === 'login'

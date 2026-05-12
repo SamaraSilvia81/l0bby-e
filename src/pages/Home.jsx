@@ -78,6 +78,11 @@ export default function Home() {
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <Navbar />
 
+      {/* Blobs */}
+      <div style={{ position:'fixed', width:600, height:600, top:'calc(50vh - 300px)', left:-250, background:'radial-gradient(circle, rgba(143,0,255,0.07) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+      <div style={{ position:'fixed', width:500, height:500, bottom:-150, right:-150, background:'radial-gradient(circle, rgba(255,121,39,0.06) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+      <div style={{ position:'fixed', width:350, height:350, bottom:50, left:'30%', background:'radial-gradient(circle, rgba(143,0,255,0.04) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+
       <div className="hero">
         <div className="hero-left">
           <div className="hero-tag">ETE Cícero Dias · Desenvolvimento de Sistemas</div>
