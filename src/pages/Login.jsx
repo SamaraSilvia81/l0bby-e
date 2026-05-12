@@ -95,6 +95,9 @@ export default function Login() {
         </div>
       </nav>
 
+      <div style={{ position:'fixed', width:500, height:500, top:'calc(50vh - 250px)', left:-200, background:'radial-gradient(circle, rgba(143,0,255,0.08) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+      <div style={{ position:'fixed', width:400, height:400, top:'calc(50vh - 200px)', right:-150, background:'radial-gradient(circle, rgba(255,121,39,0.06) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+
       <div className="login-wrap" style={{ flex:1 }}>
         <div className="login-left">
           <div className="hero-tag">ETE Cícero Dias · DS Portal</div>

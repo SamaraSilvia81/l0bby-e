@@ -149,9 +149,11 @@ export default function Profile() {
                     : <span className="avatar-initials">{initials}</span>
                 }
               </div>
-              <div style={{ position:'absolute', bottom:0, right:0, width:20, height:20, background:'var(--v)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.6rem', cursor:'pointer', border:'2px solid var(--bg)' }}
+              <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, background:'var(--bg)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', border:'2px solid var(--v)', boxShadow:'0 0 8px rgba(143,0,255,0.4)' }}
                 onClick={() => { play('click'); setShowAvatarPicker(v => !v) }}>
-                ✎
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--v)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
               </div>
             </div>
 

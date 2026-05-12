@@ -193,6 +193,10 @@ export default function Admin() {
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <Navbar />
 
+      {/* Blobs */}
+      <div style={{ position:'fixed', width:500, height:500, top:'calc(50vh - 250px)', left:-200, background:'radial-gradient(circle, rgba(143,0,255,0.06) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+      <div style={{ position:'fixed', width:400, height:400, bottom:-100, right:-100, background:'radial-gradient(circle, rgba(255,121,39,0.04) 0%, transparent 70%)', pointerEvents:'none', zIndex:-1 }} />
+
       {/* Bento stats */}
       <div className="bento-grid">
         {[
