@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useSound } from '../hooks/useSound'
 
 export default function CertModal({ event, student, onClose }) {
   const { play } = useSound()
+  const printRef = useRef(null)
 
   useEffect(() => {
     play('cert')
@@ -17,38 +19,32 @@ export default function CertModal({ event, student, onClose }) {
 
   const handlePrint = () => {
     play('click')
-    // Revela o elemento de print, chama window.print(), depois esconde
     const el = document.getElementById('cert-print-root')
     if (el) {
       el.style.display = 'block'
       setTimeout(() => {
         window.print()
         setTimeout(() => { el.style.display = 'none' }, 800)
-      }, 100)
+      }, 150)
     }
   }
 
-  const CertContent = ({ forPrint = false }) => (
+  const CertContent = () => (
     <div style={{
       width: '100%', background: '#fff',
       fontFamily: "'JetBrains Mono', monospace",
       position: 'relative', overflow: 'hidden',
-      minHeight: forPrint ? '100vh' : 'auto',
     }}>
-      {/* Barra lateral violet */}
       <div style={{ position:'absolute', top:0, left:0, bottom:0, width:7, background:'#8F00FF' }} />
-      {/* Watermark */}
       <div style={{
         position:'absolute', fontFamily:"'Barlow Condensed',sans-serif",
         fontWeight:900, fontSize:'8rem', color:'rgba(143,0,255,0.035)',
         top:'50%', left:'50%', transform:'translate(-50%,-50%) rotate(-14deg)',
         whiteSpace:'nowrap', pointerEvents:'none', letterSpacing:'-0.04em',
       }}>L0BBY-E</div>
-      {/* Borda interna */}
       <div style={{ position:'absolute', inset:14, border:'1px solid #ececec', pointerEvents:'none' }} />
 
       <div style={{ padding:'2.5rem 3rem 2.5rem 3.5rem', position:'relative', zIndex:1 }}>
-        {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1.5rem' }}>
           <div>
             <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontWeight:900, fontSize:'1.2rem', color:'#0a0a0a' }}>
@@ -69,7 +65,6 @@ export default function CertModal({ event, student, onClose }) {
           </div>
         </div>
 
-        {/* Corpo */}
         <p style={{ fontSize:'0.68rem', color:'#888', marginBottom:'0.4rem', letterSpacing:'0.06em', textTransform:'uppercase' }}>
           Certificamos que
         </p>
@@ -92,7 +87,6 @@ export default function CertModal({ event, student, onClose }) {
           {event.location && <> · {event.location}</>}
         </p>
 
-        {/* Footer do cert */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', paddingTop:'1.5rem', marginTop:'1.5rem', borderTop:'1px solid #f0f0f0' }}>
           <div>
             <p style={{ fontSize:'0.52rem', color:'#aaa', letterSpacing:'0.08em', textTransform:'uppercase' }}>Carga horária</p>
@@ -116,16 +110,18 @@ export default function CertModal({ event, student, onClose }) {
 
   return (
     <>
-      {/* Elemento oculto para print */}
-      <div id="cert-print-root" style={{ display:'none' }}>
-        <CertContent forPrint />
-      </div>
+      {/* Portal: injeta o cert-print-root direto no body, fora de qualquer modal */}
+      {createPortal(
+        <div id="cert-print-root" style={{ display:'none' }}>
+          <CertContent />
+        </div>,
+        document.body
+      )}
 
       {/* Modal na tela */}
       <div className="modal-bg" onClick={onClose}>
         <div style={{ width:'min(880px,100%)', display:'flex', flexDirection:'column' }}
           onClick={e => e.stopPropagation()}>
-
           <div style={{
             display:'flex', justifyContent:'space-between', alignItems:'center',
             padding:'0.75rem 1rem', background:'var(--surface)',

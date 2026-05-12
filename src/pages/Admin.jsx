@@ -41,7 +41,7 @@ export default function Admin() {
   const [certTarget, setCertTarget]     = useState(null) // { event, student }
   const [certEvFilter, setCertEvFilter] = useState('all')
   const [certCheckins, setCertCheckins] = useState([])
-  const [certLoading, setCertLoading]   = useState(true)
+  const [certLoading, setCertLoading]   = useState(false)
   const [certStudents, setCertStudents] = useState([])
 
   const refresh = async () => {
@@ -667,6 +667,62 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ── ABA CERTIFICADOS ── */}
+      {tab==='certificados' && (
+        <div style={{ padding:'2rem' }}>
+          <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
+            <select
+              value={events.filter(ev=>ev.status==='closed').find(ev=>ev.id===certEvFilter)?.id || events.filter(ev=>ev.status==='closed')[0]?.id || ''}
+              onChange={async e => {
+                const evId = e.target.value
+                setCertEvFilter(evId)
+                const allChks = await DB.getCheckins()
+                const ids = allChks.filter(c => c.eventId === evId && (c.checkin === true || c.status === 'presente')).map(c => c.studentId)
+                setCertStudents(students.filter(s => ids.includes(s.id)))
+              }}
+              style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
+              {events.filter(ev=>ev.status==='closed').map(ev => (
+                <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
+              ))}
+            </select>
+            <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
+              {certStudents.length} aluno(s) com presença confirmada
+            </span>
+          </div>
+          {certStudents.length === 0 ? (
+            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// nenhum aluno com presença confirmada</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+              {certStudents.map(stu => {
+                const selectedEv = events.find(ev => ev.id === certEvFilter)
+                return (
+                  <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                    <div>
+                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula}{stu.turma ? ` · ${stu.turma}` : ''}</p>
+                    </div>
+                    <button className="btn btn-v btn-sm"
+                      onClick={() => { play('click'); setCertTarget({ event: selectedEv, student: stu }) }}
+                      onMouseEnter={() => play('hover')}>
+                      ★ gerar certificado
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {certTarget && (
+        <CertModal
+          event={certTarget.event}
+          student={certTarget.student}
+          onClose={() => setCertTarget(null)}
+        />
+      )}
+
       <footer>
         <span><span className="logo-sm">l<span>0</span>bby-e</span> · coordenação</span>
         <span>ETE Cícero Dias · desenvolvimento de sistemas</span>
@@ -730,66 +786,6 @@ function CheckinPanel({ checkinEv, checkins, onToggle, onBack }) {
           )}
         </div>
       )}
-      {/* ── ABA CERTIFICADOS ─────────────────────────────── */}
-      {tab==='certificados' && (
-        <div style={{ padding:'2rem' }}>
-          <div style={{ marginBottom:'1.5rem', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-            <span className="tech-label" style={{ marginBottom:0 }}>// evento</span>
-            <select
-              value={events.filter(ev=>ev.status==='closed').find(ev=>ev.id===certEvFilter)?.id || events.filter(ev=>ev.status==='closed')[0]?.id || ''}
-              onChange={async e => {
-                const evId = e.target.value
-                setCertEvFilter(evId)
-                setCertLoading(true)
-                const allChks = await DB.getCheckins()
-                const ids = allChks.filter(c => c.eventId === evId && (c.checkin === true || c.status === 'presente')).map(c => c.studentId)
-                setCertStudents(students.filter(s => ids.includes(s.id)))
-                setCertLoading(false)
-              }}
-              style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', background:'var(--surface)', color:'var(--text)', border:'1px solid var(--border)', padding:'4px 8px', cursor:'pointer' }}>
-              {events.filter(ev=>ev.status==='closed').map(ev => (
-                <option key={ev.id} value={ev.id}>{ev.title} — {ev.dateLabel}</option>
-              ))}
-            </select>
-            <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
-              {certStudents.length} aluno(s) com presença confirmada
-            </span>
-          </div>
-          {certLoading ? (
-            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// carregando...</p>
-          ) : certStudents.length === 0 ? (
-            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--text3)' }}>// nenhum aluno com presença confirmada</p>
-          ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
-              {certStudents.map(stu => {
-                const selectedEv = events.find(ev => ev.id === certEvFilter)
-                return (
-                  <div key={stu.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'0.8rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
-                    <div>
-                      <p style={{ fontFamily:'var(--font-mono)', fontWeight:700, fontSize:'0.8rem', color:'var(--text)' }}>{stu.name}</p>
-                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula}{stu.turma ? ` · ${stu.turma}` : ''}</p>
-                    </div>
-                    <button className="btn btn-v btn-sm"
-                      onClick={() => { play('click'); setCertTarget({ event: selectedEv, student: stu }) }}
-                      onMouseEnter={() => play('hover')}>
-                      ★ gerar certificado
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {certTarget && (
-        <CertModal
-          event={certTarget.event}
-          student={certTarget.student}
-          onClose={() => setCertTarget(null)}
-        />
-      )}
-
     </>
   )
 }
