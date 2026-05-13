@@ -70,7 +70,7 @@ export default function Admin() {
       setCertEvFilter(firstEv.id)
     }
     setCertLoading(false)
-    setStudents(stus.filter(s => s.role === 'student'))
+    setStudents(stus.filter(s => s.role !== 'admin' || true).sort((a,b) => (a.name||'').localeCompare(b.name||'')))
     setTotalInsc(allInsc.length)
     setTotalPresent(allChks.filter(c => c.status === 'presente').length)
     // Mapa: eventId → contagem inscritos
@@ -363,12 +363,26 @@ export default function Admin() {
                           </span>
                         )}
                       </p>
-                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>
+                        {stu.username && <span style={{color:'var(--v)'}}>@{stu.username} · </span>}
+                        {stu.matricula}{stu.turma ? ` · ${stu.turma}` : ''}
+                      </p>
                     </div>
-                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
                       <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', border:'1px solid var(--border)', padding:'2px 8px' }}>
                         {stu.pass}
                       </span>
+                      <select
+                        value={stu.role || 'student'}
+                        onChange={async e => {
+                          await DB.updateStudent(stu.id, { role: e.target.value })
+                          play('click'); toast(`Role: ${e.target.value}`, 'info'); await refresh()
+                        }}
+                        style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', background:'var(--surface)', color: stu.role==='staff' ? 'var(--o)' : stu.role==='admin' ? 'var(--v)' : 'var(--text3)', border:'1px solid var(--border)', padding:'2px 6px', cursor:'pointer' }}>
+                        <option value="student">student</option>
+                        <option value="staff">staff</option>
+                        <option value="admin">admin</option>
+                      </select>
                       <button className="btn btn-danger btn-sm"
                         onClick={async () => { await DB.deleteStudent(stu.id); play('error'); toast('Aluno removido.','info'); await refresh() }}>
                         ✕

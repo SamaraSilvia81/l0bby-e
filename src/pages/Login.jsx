@@ -42,9 +42,6 @@ export default function Login() {
       if (result.firstAccess) {
         navigate('/primeiro-acesso', { replace: true })
       } else {
-        const { user: u } = await import('../context/AuthContext').then(m => ({ user: null }))
-        // Busca o role atualizado
-        const { DB } = await import('../db/firebaseDB')
         const stu = await DB.getStudentByLogin(mat.trim())
         const role = stu?.role || 'student'
         if (role === 'admin') navigate('/admin', { replace: true })
