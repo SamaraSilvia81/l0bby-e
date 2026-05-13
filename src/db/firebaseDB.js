@@ -153,6 +153,40 @@ export const DB = {
     return results[0] || null
   },
 
+  async getStudentByUsername(username) {
+    const results = await queryWhere(C.STUDENTS, 'username', '==', username.toLowerCase().trim())
+    return results[0] || null
+  },
+
+  async getStudentByLogin(login) {
+    // Tenta username primeiro, depois matrícula (compatibilidade)
+    const byUsername = await queryWhere(C.STUDENTS, 'username', '==', login.toLowerCase().trim())
+    if (byUsername[0]) return byUsername[0]
+    const byMat = await queryWhere(C.STUDENTS, 'matricula', '==', login)
+    return byMat[0] || null
+  },
+
+  async enrollAllStudentsInEvent(eventId, turmas) {
+    // Inscreve todos os alunos das turmas no evento
+    const students = await this.getStudents()
+    const filtered = turmas && turmas.length > 0
+      ? students.filter(s => s.role === 'student' && turmas.includes(s.turma))
+      : students.filter(s => s.role === 'student')
+    const existing = await queryWhere(C.INSCRIPTIONS, 'eventId', '==', eventId)
+    const existingIds = existing.map(i => i.studentId)
+    let count = 0
+    for (const stu of filtered) {
+      if (!existingIds.includes(stu.id)) {
+        const id = 'insc-' + uid()
+        await setDoc(docRef(C.INSCRIPTIONS, id), {
+          studentId: stu.id, eventId, inscAt: new Date().toISOString()
+        })
+        count++
+      }
+    }
+    return count
+  },
+
   async createStudent(data) {
     const id = 'stu-' + uid()
     await setDoc(docRef(C.STUDENTS, id), { ...data, role: 'student', createdAt: serverTimestamp() })

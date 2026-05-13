@@ -24,6 +24,7 @@ export default function Profile() {
   // Edit states
   const [editMode, setEditMode]   = useState(false)
   const [eName, setEName]         = useState('')
+  const [eUser, setEUser]         = useState('')
   const [eMat, setEMat]           = useState('')
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [saving, setSaving]       = useState(false)
@@ -42,6 +43,7 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return
     setEName(user.name || '')
+    setEUser(user.username || '')
     setEMat(user.matricula || '')
     const load = async () => {
       setLoading(true)
@@ -94,15 +96,23 @@ export default function Profile() {
   const saveProfile = async () => {
     if (!eName.trim() || !eMat.trim()) { toast('Nome e matrícula obrigatórios.', 'error'); return }
     setSaving(true)
-    await DB.updateStudent(user.id, { name: eName.trim(), matricula: eMat.trim() })
-    setUser({ ...user, name: eName.trim(), matricula: eMat.trim() })
+    // Verifica se username mudou e se já existe
+    const usernameTrimmed = eUser.toLowerCase().trim().replace(/\s/g, '')
+    if (usernameTrimmed && usernameTrimmed !== user.username) {
+      const existing = await DB.getStudentByUsername(usernameTrimmed)
+      if (existing && existing.id !== user.id) {
+        toast('Nome de usuário já em uso.', 'error'); setSaving(false); return
+      }
+    }
+    await DB.updateStudent(user.id, { name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim() })
+    setUser({ ...user, name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim() })
     play('success'); toast('Perfil atualizado!', 'success')
     setEditMode(false); setSaving(false)
   }
 
   const saveAvatar = async (id) => {
-    await DB.updateStudent(user.id, { avatar: id })
-    setUser({ ...user, avatar: id })
+    await DB.updateStudent(user.id, { avatar: id, customPhoto: null })
+    setUser({ ...user, avatar: id, customPhoto: null })
     play('success'); toast('Avatar atualizado!', 'success')
     setShowAvatarPicker(false)
   }
@@ -195,7 +205,13 @@ export default function Profile() {
                   <input className="input" value={eName} onChange={e => setEName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="input-label">matrícula</label>
+                  <label className="input-label">nome de usuário</label>
+                  <input className="input" value={eUser} placeholder="sams81"
+                    onChange={e => setEUser(e.target.value.replace(/\s/g, ''))} />
+                  <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginTop:3, display:'block' }}>// usado pra fazer login</span>
+                </div>
+                <div>
+                  <label className="input-label">matrícula <span style={{color:'var(--text3)'}}>( opcional )</span></label>
                   <input className="input" value={eMat} onChange={e => setEMat(e.target.value)} />
                 </div>
                 <div style={{ display:'flex', gap:6 }}>
@@ -210,7 +226,8 @@ export default function Profile() {
                 <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.3rem', color:'var(--text)', lineHeight:1, marginBottom:4 }}>
                   {user.name.toUpperCase()}
                 </p>
-                <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--text3)', marginBottom:6 }}>{user.matricula}</p>
+                {user.username && <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--v)', marginBottom:2 }}>@{user.username}</p>}
+                {user.matricula && <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)', marginBottom:6 }}>{user.matricula}</p>}
                 {user.curso && (
                   <span style={{ display:'inline-block', marginBottom:8, fontFamily:'var(--font-mono)', fontSize:'0.55rem', fontWeight:700, letterSpacing:'0.06em', background:'var(--v-dim)', color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 8px' }}>
                     {user.curso}

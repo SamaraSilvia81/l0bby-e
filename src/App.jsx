@@ -9,6 +9,7 @@ import Details     from './pages/Details'
 import Profile     from './pages/Profile'
 import Admin       from './pages/Admin'
 import Ranking     from './pages/Ranking'
+import Staff       from './pages/Staff'
 
 export const ThemeContext = createContext({ isDark: true, toggle: () => {} })
 export const useTheme = () => useContext(ThemeContext)
@@ -21,6 +22,7 @@ function PrivateRoute({ children, adminOnly = false }) {
     </div>
   )
   if (!user) return <Navigate to="/login" state={{ from: window.location.pathname }} replace />
+  if (adminOnly && user.role !== 'admin') return <Navigate to={user.role==='staff'?'/staff':'/home'} replace />
   if (adminOnly && user.role !== 'admin') return <Navigate to="/home" replace />
   return children
 }
@@ -49,6 +51,7 @@ function AppRoutes() {
       <Route path="/profile"         element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/admin"           element={<PrivateRoute adminOnly><Admin /></PrivateRoute>} />
       <Route path="/ranking"          element={<Ranking />} />
+      <Route path="/staff"            element={<PrivateRoute><Staff /></PrivateRoute>} />
       <Route path="*"                element={<Navigate to="/home" replace />} />
     </Routes>
   )

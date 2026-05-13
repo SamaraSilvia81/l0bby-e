@@ -22,6 +22,7 @@ export default function Login() {
 
   // cadastro
   const [cNome, setCNome]       = useState('')
+  const [cUser, setCUser]       = useState('')
   const [cMat,  setCMat]        = useState('')
   const [cSenha, setCSenha]     = useState('')
   const [cConfirm, setCConfirm] = useState('')
@@ -41,7 +42,14 @@ export default function Login() {
       if (result.firstAccess) {
         navigate('/primeiro-acesso', { replace: true })
       } else {
-        navigate(mat.toUpperCase().startsWith('COORD') ? '/admin' : '/home')
+        const { user: u } = await import('../context/AuthContext').then(m => ({ user: null }))
+        // Busca o role atualizado
+        const { DB } = await import('../db/firebaseDB')
+        const stu = await DB.getStudentByLogin(mat.trim())
+        const role = stu?.role || 'student'
+        if (role === 'admin') navigate('/admin', { replace: true })
+        else if (role === 'staff') navigate('/staff', { replace: true })
+        else navigate('/home', { replace: true })
       }
     } else {
       play('error'); toast(result.msg, 'error')
@@ -56,12 +64,15 @@ export default function Login() {
     if (cSenha.length < 4)   { play('error'); toast('Senha deve ter pelo menos 4 caracteres.', 'error'); return }
     setLoading(true)
     try {
+      if (!cUser.trim()) { play('error'); toast('Escolha um nome de usuário.', 'error'); setLoading(false); return }
+      const existingUser = await DB.getStudentByUsername(cUser.toLowerCase().trim())
+      if (existingUser) { play('error'); toast('Nome de usuário já em uso. Escolha outro.', 'error'); setLoading(false); return }
       const existing = await DB.getStudentByMat(cMat.trim())
-      if (existing) { play('error'); toast('Matrícula já cadastrada. Faça login.', 'error'); setLoading(false); return }
-      await DB.createStudent({ name: cNome.trim(), matricula: cMat.trim(), pass: cSenha, turma: cTurma, curso: cCurso, firstAccess: false })
+      if (existing && cMat.trim()) { play('error'); toast('Matrícula já cadastrada.', 'error'); setLoading(false); return }
+      await DB.createStudent({ name: cNome.trim(), username: cUser.toLowerCase().trim(), matricula: cMat.trim(), pass: cSenha, turma: cTurma, curso: cCurso, firstAccess: false })
       play('success'); toast('Cadastro realizado! Faça login.', 'success')
       setTab('login'); setMat(cMat.trim())
-      setCNome(''); setCMat(''); setCSenha(''); setCConfirm('')
+      setCNome(''); setCUser(''); setCMat(''); setCSenha(''); setCConfirm('')
     } catch (err) {
       play('error'); toast('Erro ao cadastrar. Tente novamente.', 'error'); console.error(err)
     }
@@ -131,8 +142,8 @@ export default function Login() {
           {tab === 'login' ? (
             <form onSubmit={handleLogin} style={{ display:'flex', flexDirection:'column', gap:'1.1rem' }}>
               <div>
-                <label className="input-label">matrícula</label>
-                <input className="input" type="text" placeholder="2026-0041"
+                <label className="input-label">usuário ou matrícula</label>
+                <input className="input" type="text" placeholder="sams81"
                   value={mat} onChange={e => setMat(e.target.value)} required autoFocus />
               </div>
               <div>

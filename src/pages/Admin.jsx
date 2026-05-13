@@ -28,7 +28,9 @@ export default function Admin() {
   const [totalPresent, setTotalPresent] = useState(0)
 
   // Formulário de novo aluno
-  const [stuForm, setStuForm] = useState({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
+  const [stuForm, setStuForm] = useState({ name:'', username:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'', role:'student' })
+  const [staffForm, setStaffForm] = useState({ name:'', username:'', pass:'' })
+  const [savingStaff, setSavingStaff] = useState(false)
   const [savingStu, setSavingStu] = useState(false)
 
   // Importação em lote
@@ -97,7 +99,14 @@ export default function Admin() {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.instructor.trim()) { play('error'); toast('Preencha título e instrutor.','error'); return }
-    if (modal === 'create') await DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
+    if (modal === 'create') {
+      const newEv = await DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
+      // Inscrever automaticamente todos os alunos das turmas vinculadas
+      if (newEv?.id) {
+        const count = await DB.enrollAllStudentsInEvent(newEv.id, form.turmas || [])
+        toast(`✓ ${count} aluno(s) inscritos automaticamente!`, 'info')
+      }
+    }
     else                    await DB.updateEvent(modal.id, form)
     play('success'); toast(modal==='create'?'Evento criado!':'Evento atualizado!','success')
     await refresh(); setModal(null)
@@ -171,7 +180,7 @@ export default function Admin() {
     setSavingStu(true)
     const existing = await DB.getStudentByMat(stuForm.matricula.trim())
     if (existing) { toast('Matrícula já cadastrada!','error'); setSavingStu(false); return }
-    await DB.createStudent({ ...stuForm, matricula: stuForm.matricula.trim(), name: stuForm.name.trim(), firstAccess: true })
+    await DB.createStudent({ ...stuForm, username: stuForm.username.toLowerCase().trim(), matricula: stuForm.matricula.trim(), name: stuForm.name.trim(), firstAccess: false })
     play('success'); toast('Aluno cadastrado!','success')
     setStuForm({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
     setSavingStu(false)
