@@ -9,7 +9,7 @@ import EventCard from '../components/EventCard'
 import CertModal from '../components/CertModal'
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, isStaff } = useAuth()
   const { toast } = useToast()
   const { play } = useSound()
   const navigate = useNavigate()
@@ -141,7 +141,7 @@ export default function Home() {
               const chk = checkins.find(c => c.eventId === ev.id)
               return (
                 <div key={ev.id} style={{ display:'flex', flexDirection:'column', minWidth:300 }}>
-                  <EventCard event={ev} enrolled onUnenroll={handleUnenroll} />
+                  <EventCard event={ev} enrolled onUnenroll={handleUnenroll} isStaff={isStaff} />
                   {chk?.status === 'presente' && (
                     <button className="btn btn-v btn-sm btn-full" style={{ marginTop:6 }}
                       onClick={() => { play('cert'); setCertEvent(ev) }}
@@ -200,6 +200,7 @@ export default function Home() {
             {filtered.map(ev => (
               <EventCard key={ev.id} event={ev}
                 enrolled={myEventIds.includes(ev.id)}
+                isStaff={isStaff}
                 onEnroll={handleEnroll} onUnenroll={handleUnenroll} />
             ))}
             {filtered.length === 0 && (

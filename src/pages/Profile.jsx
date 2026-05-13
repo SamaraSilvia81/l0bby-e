@@ -228,6 +228,17 @@ export default function Profile() {
                 </p>
                 {user.username && <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--v)', marginBottom:2 }}>@{user.username}</p>}
                 {user.matricula && <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)', marginBottom:6 }}>{user.matricula}</p>}
+                {user.role === 'staff' && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:8 }}>
+                    <span style={{ display:'inline-block', fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700, letterSpacing:'0.08em', background:'rgba(0,229,255,0.08)', color:'#00e5ff', border:'1px solid #00e5ff', padding:'3px 10px', width:'fit-content' }}>
+                      ◈ STAFF
+                    </span>
+                    <a href="/staff" onClick={() => play('nav')}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, fontFamily:'var(--font-mono)', fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.08em', color:'#00e5ff', background:'rgba(0,229,255,0.06)', border:'1px solid #00e5ff', padding:'7px 14px', cursor:'pointer', textDecoration:'none', transition:'all 0.15s', width:'fit-content' }}>
+                      ◈ painel de check-in
+                    </a>
+                  </div>
+                )}
                 {user.curso && (
                   <span style={{ display:'inline-block', marginBottom:8, fontFamily:'var(--font-mono)', fontSize:'0.55rem', fontWeight:700, letterSpacing:'0.06em', background:'var(--v-dim)', color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 8px' }}>
                     {user.curso}
@@ -239,6 +250,7 @@ export default function Profile() {
                   </span>
                 )}
                 <br/>
+
                 <button onClick={() => { play('click'); setEditMode(true) }}
                   style={{ marginTop:8, display:'inline-flex', alignItems:'center', gap:6, fontFamily:'var(--font-mono)', fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.08em', color:'var(--text3)', background:'none', border:'1px solid var(--border)', padding:'6px 12px', cursor:'pointer', transition:'all 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor='var(--v)'; e.currentTarget.style.color='var(--v)' }}
