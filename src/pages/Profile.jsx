@@ -26,6 +26,7 @@ export default function Profile() {
   const [eName, setEName]         = useState('')
   const [eUser, setEUser]         = useState('')
   const [eMat, setEMat]           = useState('')
+  const [eEmail, setEEmail]       = useState('')
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [saving, setSaving]       = useState(false)
 
@@ -45,6 +46,7 @@ export default function Profile() {
     setEName(user.name || '')
     setEUser(user.username || '')
     setEMat(user.matricula || '')
+    setEEmail(user.email || '')
     const load = async () => {
       setLoading(true)
       const inscriptions = await DB.getInscriptionsByStudent(user.id)
@@ -104,8 +106,8 @@ export default function Profile() {
         toast('Nome de usuário já em uso.', 'error'); setSaving(false); return
       }
     }
-    await DB.updateStudent(user.id, { name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim() })
-    setUser({ ...user, name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim() })
+    await DB.updateStudent(user.id, { name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim(), email: eEmail.trim() })
+    setUser({ ...user, name: eName.trim(), username: usernameTrimmed, matricula: eMat.trim(), email: eEmail.trim() })
     play('success'); toast('Perfil atualizado!', 'success')
     setEditMode(false); setSaving(false)
   }
@@ -213,6 +215,10 @@ export default function Profile() {
                 <div>
                   <label className="input-label">matrícula <span style={{color:'var(--text3)'}}>( opcional )</span></label>
                   <input className="input" value={eMat} onChange={e => setEMat(e.target.value)} />
+                </div>
+                <div>
+                  <label className="input-label">email <span style={{color:'var(--text3)'}}>( para receber certificados )</span></label>
+                  <input className="input" type="email" placeholder="seu@email.com" value={eEmail} onChange={e => setEEmail(e.target.value)} />
                 </div>
                 <div style={{ display:'flex', gap:6 }}>
                   <button className="btn btn-v btn-sm" onClick={saveProfile} disabled={saving}>

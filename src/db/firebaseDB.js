@@ -1,8 +1,5 @@
 // ─────────────────────────────────────────────────────────────
 //  L0bby-E — Firebase DB v1
-//  Mesma API do localDB.js — nenhuma página precisa mudar.
-//  Todas as funções são async. O App usa useEffect/useState
-//  pra consumir, então basta trocar os imports.
 // ─────────────────────────────────────────────────────────────
 import { db } from '../firebase'
 import {
@@ -18,6 +15,7 @@ const C = {
   STUDENTS:     'students',
   INSCRIPTIONS: 'inscriptions',
   CHECKINS:     'checkins',
+  CERTS:        'certificates',
   CONVITES:     'convites',
   CATEGORIAS:   'categorias',
 }
@@ -47,67 +45,33 @@ async function queryWhere(col, field, op, value) {
 export const DB = {
 
   // ── Categorias ──────────────────────────────────────────────
-  async getCategorias() {
-    return getAll(C.CATEGORIAS)
-  },
+  async getCategorias() { return getAll(C.CATEGORIAS) },
 
   async createCategoria(data) {
-    const id  = 'cat-' + uid()
+    const id = 'cat-' + uid()
     await setDoc(docRef(C.CATEGORIAS, id), data)
     return { id, ...data }
   },
 
-  async updateCategoria(id, data) {
-    await updateDoc(docRef(C.CATEGORIAS, id), data)
-  },
-
-  async deleteCategoria(id) {
-    await deleteDoc(docRef(C.CATEGORIAS, id))
-  },
+  async updateCategoria(id, data) { await updateDoc(docRef(C.CATEGORIAS, id), data) },
+  async deleteCategoria(id)       { await deleteDoc(docRef(C.CATEGORIAS, id)) },
 
   // ── Eventos ─────────────────────────────────────────────────
-  async getEvents() {
-    return getAll(C.EVENTS)
-  },
-
-  async getEventById(id) {
-    return getById(C.EVENTS, id)
-  },
-
-  async getUpcoming() {
-    return queryWhere(C.EVENTS, 'status', '==', 'open')
-  },
-
-  async getPast() {
-    return queryWhere(C.EVENTS, 'status', '==', 'closed')
-  },
-
-  async getByParent(parentId) {
-    return queryWhere(C.EVENTS, 'faz_parte_de', '==', parentId)
-  },
-
-  async getMainEvents() {
-    return queryWhere(C.EVENTS, 'tipo', '==', 'evento')
-  },
-
-  async getPalestras() {
-    return queryWhere(C.EVENTS, 'tipo', '==', 'palestra')
-  },
+  async getEvents()        { return getAll(C.EVENTS) },
+  async getEventById(id)   { return getById(C.EVENTS, id) },
+  async getUpcoming()      { return queryWhere(C.EVENTS, 'status', '==', 'open') },
+  async getPast()          { return queryWhere(C.EVENTS, 'status', '==', 'closed') },
+  async getByParent(p)     { return queryWhere(C.EVENTS, 'faz_parte_de', '==', p) },
+  async getMainEvents()    { return queryWhere(C.EVENTS, 'tipo', '==', 'evento') },
+  async getPalestras()     { return queryWhere(C.EVENTS, 'tipo', '==', 'palestra') },
 
   async createEvent(data) {
     const id = 'ev-' + uid()
     const newEv = {
-      tipo: 'palestra',
-      faz_parte_de: null,
-      status: 'open',
-      convites_permitidos: true,
-      foto_palestrante: null,
-      material_link: null,
-      fotos_registro: [],
-      topics: [],
-      turmas: [],
-      ...data,
-      createdAt: serverTimestamp(),
+      tipo: 'palestra', faz_parte_de: null, status: 'open',
+      convites_permitidos: true, foto_palestrante: null,
+      material_link: null, fotos_registro: [], topics: [], turmas: [],
+      ...data, createdAt: serverTimestamp(),
     }
     await setDoc(docRef(C.EVENTS, id), newEv)
     return { id, ...newEv }
@@ -119,48 +83,40 @@ export const DB = {
 
   async deleteEvent(id) {
     await deleteDoc(docRef(C.EVENTS, id))
-    // Remove inscrições, checkins e convites relacionados
     const [insc, chks, convs] = await Promise.all([
       queryWhere(C.INSCRIPTIONS, 'eventId', '==', id),
       queryWhere(C.CHECKINS,     'eventId', '==', id),
       queryWhere(C.CONVITES,     'eventId', '==', id),
     ])
     await Promise.all([
-      ...insc.map(i => deleteDoc(docRef(C.INSCRIPTIONS, i.id))),
-      ...chks.map(c => deleteDoc(docRef(C.CHECKINS,     c.id))),
-      ...convs.map(c => deleteDoc(docRef(C.CONVITES,    c.id))),
+      ...insc.map(i  => deleteDoc(docRef(C.INSCRIPTIONS, i.id))),
+      ...chks.map(c  => deleteDoc(docRef(C.CHECKINS,     c.id))),
+      ...convs.map(c => deleteDoc(docRef(C.CONVITES,     c.id))),
     ])
   },
 
   async addFotoRegistro(eventId, url) {
     const ev = await this.getEventById(eventId)
     if (!ev) return
-    const fotos = [...(ev.fotos_registro || []), url]
-    await this.updateEvent(eventId, { fotos_registro: fotos })
+    await this.updateEvent(eventId, { fotos_registro: [...(ev.fotos_registro || []), url] })
   },
 
   // ── Alunos ──────────────────────────────────────────────────
-  async getStudents() {
-    return getAll(C.STUDENTS)
-  },
-
-  async getStudentById(id) {
-    return getById(C.STUDENTS, id)
-  },
+  async getStudents()      { return getAll(C.STUDENTS) },
+  async getStudentById(id) { return getById(C.STUDENTS, id) },
 
   async getStudentByMat(matricula) {
-    const results = await queryWhere(C.STUDENTS, 'matricula', '==', matricula)
-    return results[0] || null
+    const r = await queryWhere(C.STUDENTS, 'matricula', '==', matricula)
+    return r[0] || null
   },
 
   async getStudentByUsername(username) {
-    const results = await queryWhere(C.STUDENTS, 'username', '==', username.toLowerCase().trim())
-    return results[0] || null
+    const r = await queryWhere(C.STUDENTS, 'username', '==', username.toLowerCase().trim())
+    return r[0] || null
   },
 
   async getStudentByLogin(login) {
     const loginLower = login.toLowerCase().trim()
-    // Busca todos e filtra — evita dependência de índice no Firestore
     const all = await getAll(C.STUDENTS)
     return all.find(s =>
       (s.username && s.username.toLowerCase() === loginLower) ||
@@ -169,12 +125,11 @@ export const DB = {
   },
 
   async enrollAllStudentsInEvent(eventId, turmas) {
-    // Inscreve todos os alunos das turmas no evento
     const students = await this.getStudents()
     const filtered = turmas && turmas.length > 0
       ? students.filter(s => s.role === 'student' && turmas.includes(s.turma))
       : students.filter(s => s.role === 'student')
-    const existing = await queryWhere(C.INSCRIPTIONS, 'eventId', '==', eventId)
+    const existing    = await queryWhere(C.INSCRIPTIONS, 'eventId', '==', eventId)
     const existingIds = existing.map(i => i.studentId)
     let count = 0
     for (const stu of filtered) {
@@ -195,30 +150,17 @@ export const DB = {
     return { id, ...data }
   },
 
-  async updateStudent(id, data) {
-    await updateDoc(docRef(C.STUDENTS, id), data)
-  },
-
-  async deleteStudent(id) {
-    await deleteDoc(docRef(C.STUDENTS, id))
-  },
+  async updateStudent(id, data) { await updateDoc(docRef(C.STUDENTS, id), data) },
+  async deleteStudent(id)       { await deleteDoc(docRef(C.STUDENTS, id)) },
 
   // ── Inscrições ──────────────────────────────────────────────
-  async getInscriptions() {
-    return getAll(C.INSCRIPTIONS)
-  },
-
-  async getInscriptionsByStudent(studentId) {
-    return queryWhere(C.INSCRIPTIONS, 'studentId', '==', studentId)
-  },
-
-  async getInscriptionsByEvent(eventId) {
-    return queryWhere(C.INSCRIPTIONS, 'eventId', '==', eventId)
-  },
+  async getInscriptions()              { return getAll(C.INSCRIPTIONS) },
+  async getInscriptionsByStudent(sid)  { return queryWhere(C.INSCRIPTIONS, 'studentId', '==', sid) },
+  async getInscriptionsByEvent(eid)    { return queryWhere(C.INSCRIPTIONS, 'eventId',   '==', eid) },
 
   async isEnrolled(studentId, eventId) {
-    const results = await queryWhere(C.INSCRIPTIONS, 'studentId', '==', studentId)
-    return results.some(i => i.eventId === eventId)
+    const r = await queryWhere(C.INSCRIPTIONS, 'studentId', '==', studentId)
+    return r.some(i => i.eventId === eventId)
   },
 
   async enroll(studentId, eventId) {
@@ -226,36 +168,27 @@ export const DB = {
     if (already) return false
     const id = 'ins-' + uid()
     await setDoc(docRef(C.INSCRIPTIONS, id), {
-      studentId,
-      eventId,
+      studentId, eventId,
       date: new Date().toISOString().slice(0, 10),
-      tipo: 'aluno',
-      createdAt: serverTimestamp(),
+      tipo: 'aluno', createdAt: serverTimestamp(),
     })
     return true
   },
 
   async unenroll(studentId, eventId) {
     const [insc, convs] = await Promise.all([
-      queryWhere(C.INSCRIPTIONS, 'studentId', '==', studentId),
+      queryWhere(C.INSCRIPTIONS, 'studentId',    '==', studentId),
       queryWhere(C.CONVITES,     'convidadoPor', '==', studentId),
     ])
-    const toDelete = insc.filter(i => i.eventId === eventId)
-    const convsToDelete = convs.filter(c => c.eventId === eventId)
     await Promise.all([
-      ...toDelete.map(i    => deleteDoc(docRef(C.INSCRIPTIONS, i.id))),
-      ...convsToDelete.map(c => deleteDoc(docRef(C.CONVITES,   c.id))),
+      ...insc.filter(i  => i.eventId  === eventId).map(i  => deleteDoc(docRef(C.INSCRIPTIONS, i.id))),
+      ...convs.filter(c => c.eventId  === eventId).map(c  => deleteDoc(docRef(C.CONVITES,     c.id))),
     ])
   },
 
   // ── Convites ────────────────────────────────────────────────
-  async getConvites() {
-    return getAll(C.CONVITES)
-  },
-
-  async getConvitesByEvent(eventId) {
-    return queryWhere(C.CONVITES, 'eventId', '==', eventId)
-  },
+  async getConvites()              { return getAll(C.CONVITES) },
+  async getConvitesByEvent(eid)    { return queryWhere(C.CONVITES, 'eventId', '==', eid) },
 
   async getConvitesByAluno(studentId, eventId) {
     const all = await queryWhere(C.CONVITES, 'convidadoPor', '==', studentId)
@@ -272,10 +205,8 @@ export const DB = {
       this.convitesRestantes(convidadoPor, eventId),
       this.getEventById(eventId),
     ])
-    if (restantes <= 0)
-      return { ok: false, msg: 'Limite de 2 convites por aluno atingido.' }
-    if (!ev?.convites_permitidos)
-      return { ok: false, msg: 'Convites não habilitados neste evento.' }
+    if (restantes <= 0)        return { ok: false, msg: 'Limite de 2 convites por aluno atingido.' }
+    if (!ev?.convites_permitidos) return { ok: false, msg: 'Convites não habilitados neste evento.' }
     const id = 'inv-' + uid()
     await setDoc(docRef(C.CONVITES, id), {
       convidadoPor, eventId, nomeConvidado, contatoConvidado,
@@ -285,18 +216,11 @@ export const DB = {
     return { ok: true }
   },
 
-  async removeConvite(conviteId) {
-    await deleteDoc(docRef(C.CONVITES, conviteId))
-  },
+  async removeConvite(conviteId) { await deleteDoc(docRef(C.CONVITES, conviteId)) },
 
   // ── Check-in ────────────────────────────────────────────────
-  async getCheckins() {
-    return getAll(C.CHECKINS)
-  },
-
-  async getCheckinsByEvent(eventId) {
-    return queryWhere(C.CHECKINS, 'eventId', '==', eventId)
-  },
+  async getCheckins()            { return getAll(C.CHECKINS) },
+  async getCheckinsByEvent(eid)  { return queryWhere(C.CHECKINS, 'eventId', '==', eid) },
 
   async getCheckin(studentId, eventId) {
     const all = await queryWhere(C.CHECKINS, 'studentId', '==', studentId)
@@ -304,14 +228,52 @@ export const DB = {
   },
 
   async setCheckin(studentId, eventId, status) {
-    // Verifica se já existe um checkin pra atualizar
     const existing = await this.getCheckin(studentId, eventId)
-    const record = { studentId, eventId, status, ts: new Date().toISOString() }
+    const record   = { studentId, eventId, status, ts: new Date().toISOString() }
     if (existing) {
       await updateDoc(docRef(C.CHECKINS, existing.id), record)
     } else {
       const id = 'chk-' + uid()
       await setDoc(docRef(C.CHECKINS, id), { ...record, createdAt: serverTimestamp() })
     }
+  },
+
+  // ── Certificados ────────────────────────────────────────────
+  async getCertsByStudent(studentId) {
+    return queryWhere(C.CERTS, 'studentId', '==', studentId)
+  },
+
+  async getCertByStudentAndEvent(studentId, eventId) {
+    const all = await queryWhere(C.CERTS, 'studentId', '==', studentId)
+    return all.find(c => c.eventId === eventId) || null
+  },
+
+  async logCert(studentId, eventId, data = {}) {
+    const existing = await this.getCertByStudentAndEvent(studentId, eventId)
+    if (existing) {
+      await updateDoc(docRef(C.CERTS, existing.id), {
+        downloads: (existing.downloads || 0) + 1,
+        lastDownloadAt: new Date().toISOString(),
+        ...data,
+      })
+      return existing.id
+    }
+    const id = 'cert-' + uid()
+    await setDoc(docRef(C.CERTS, id), {
+      studentId, eventId,
+      downloads: 1,
+      emailSent: false,
+      issuedAt: new Date().toISOString(),
+      lastDownloadAt: new Date().toISOString(),
+      ...data,
+    })
+    return id
+  },
+
+  async markCertEmailSent(studentId, eventId) {
+    const cert = await this.getCertByStudentAndEvent(studentId, eventId)
+    if (cert) await updateDoc(docRef(C.CERTS, cert.id), {
+      emailSent: true, emailSentAt: new Date().toISOString()
+    })
   },
 }
