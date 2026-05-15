@@ -62,11 +62,15 @@ export default function CertModal({ event, student, onClose }) {
     try {
       const { pdf, imgData } = await generatePDF()
       // Converter pra base64 sem header
-      const pdfBase64 = btoa(
-        pdf.output('arraybuffer')
-          ? String.fromCharCode(...new Uint8Array(pdf.output('arraybuffer')))
-          : pdf.output()
-      )
+
+      // Gerar base64 do PDF corretamente
+      const pdfBlob = pdf.output('blob')
+      const pdfBase64 = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result.split(',')[1])
+        reader.readAsDataURL(pdfBlob)
+      })
+
       const res = await fetch('/api/send-cert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,7 +79,7 @@ export default function CertModal({ event, student, onClose }) {
           studentName: student.name,
           eventTitle: event.title,
           eventDate: event.dateLabel,
-          pdfBase64: pdf.output('datauristring').split(',')[1],
+          pdfBase64,
         }),
       })
       const data = await res.json()
