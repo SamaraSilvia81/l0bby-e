@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { email, studentName, eventTitle, eventDate, pdfUrl } = req.body
@@ -34,8 +34,7 @@ export default async function handler(req, res) {
               ⬇ BAIXAR CERTIFICADO PDF
             </a>
             <p style="color:#555;font-size:0.7rem;margin-top:0.5rem;">
-              O link estará disponível permanentemente.<br/>
-              Guarde-o para comprovar sua participação.
+              O link estará disponível permanentemente.
             </p>
             <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
               l0bby-e · ETE Cícero Dias · Recife, PE
@@ -46,7 +45,7 @@ export default async function handler(req, res) {
     })
 
     const data = await response.json()
-    console.log('Resend status:', response.status, JSON.stringify(data))
+    console.log('Resend:', response.status, JSON.stringify(data))
     if (!response.ok) throw new Error(data.message || JSON.stringify(data))
     return res.status(200).json({ ok: true })
   } catch (err) {
@@ -55,6 +54,6 @@ export default async function handler(req, res) {
   }
 }
 
-export const config = {
+module.exports.config = {
   api: { bodyParser: { sizeLimit: '1mb' } }
 }
