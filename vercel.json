@@ -4,8 +4,8 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/" }
+  "routes": [
+    { "src": "/api/send-cert", "dest": "/api/send-cert.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
