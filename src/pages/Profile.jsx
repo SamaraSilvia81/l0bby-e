@@ -323,36 +323,34 @@ export default function Profile() {
                   <span className="section-meta">{upcoming.length} inscrição(ões)</span>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                  {upcoming.map(ev => (
-                    {(() => {
-                      const chkEv = checkins.find(c => c.eventId === ev.id)
-                      const presenteEv = chkEv?.status === 'presente' || chkEv?.checkin === true
-                      return (
-                        <div key={ev.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'1rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
-                          <div style={{ flex:1, cursor:'pointer' }} onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
-                            <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.05rem', color:'var(--text)', marginBottom:3 }}>
-                              {ev.title}
-                            </p>
-                            <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
-                              {ev.dateLabel} · {ev.location}
-                            </p>
-                          </div>
-                          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                            <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700, color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 7px' }}>
-                              {ev.hours}h
-                            </span>
-                            {presenteEv && (
-                              <button className="btn btn-v btn-sm"
-                                onClick={() => { play('cert'); setCertEvent(ev) }}
-                                onMouseEnter={() => play('hover')}>
-                                ★ cert
-                              </button>
-                            )}
-                          </div>
+                  {upcoming.map(ev => {
+                    const chkEv = checkins.find(c => c.eventId === ev.id)
+                    const presenteEv = chkEv?.status === 'presente' || chkEv?.checkin === true
+                    return (
+                      <div key={ev.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'1rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+                        <div style={{ flex:1, cursor:'pointer' }} onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
+                          <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.05rem', color:'var(--text)', marginBottom:3 }}>
+                            {ev.title}
+                          </p>
+                          <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
+                            {ev.dateLabel} · {ev.location}
+                          </p>
                         </div>
-                      )
-                    })()}
-                  ))}
+                        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                          <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700, color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 7px' }}>
+                            {ev.hours}h
+                          </span>
+                          {presenteEv && (
+                            <button className="btn btn-v btn-sm"
+                              onClick={() => { play('cert'); setCertEvent(ev) }}
+                              onMouseEnter={() => play('hover')}>
+                              ★ cert
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
