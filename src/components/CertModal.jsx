@@ -63,20 +63,21 @@ export default function CertModal({ event, student, onClose }) {
       const { pdf, imgData } = await generatePDF()
       // Converter pra base64 sem header
 
-      // Gerar PDF com qualidade reduzida para email
-      const [{ default: html2canvasEmail }, { default: jsPDFEmail }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ])
+      // Gerar imagem comprimida do certificado (bem menor que PDF)
+      const { default: html2canvasEmail } = await import('html2canvas')
       const canvasEmail = await html2canvasEmail(certRef.current, {
-        scale: 1.5,
+        scale: 1.2,
         useCORS: true,
         backgroundColor: '#ffffff',
       })
-      const imgEmail = canvasEmail.toDataURL('image/jpeg', 0.7)
-      const pdfEmail = new jsPDFEmail({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-      pdfEmail.addImage(imgEmail, 'JPEG', 0, 0, 297, 210)
-      const pdfBase64 = pdfEmail.output('datauristring').split(',')[1]
+      // Reduzir para max 800px de largura
+      const maxW = 800
+      const ratio = maxW / canvasEmail.width
+      const smallCanvas = document.createElement('canvas')
+      smallCanvas.width = maxW
+      smallCanvas.height = Math.round(canvasEmail.height * ratio)
+      smallCanvas.getContext('2d').drawImage(canvasEmail, 0, 0, smallCanvas.width, smallCanvas.height)
+      const imgBase64 = smallCanvas.toDataURL('image/jpeg', 0.6).split(',')[1]
 
       const res = await fetch('/api/send-cert', {
         method: 'POST',
@@ -86,7 +87,7 @@ export default function CertModal({ event, student, onClose }) {
           studentName: student.name,
           eventTitle: event.title,
           eventDate: event.dateLabel,
-          pdfBase64,
+          imgBase64,
         }),
       })
       const data = await res.json()
