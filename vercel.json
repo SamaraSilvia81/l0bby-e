@@ -1,11 +1,5 @@
 {
-  "functions": {
-    "api/send-cert.js": {
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    { "src": "/api/send-cert", "dest": "/api/send-cert.js" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
