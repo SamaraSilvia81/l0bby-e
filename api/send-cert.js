@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { email, studentName, eventTitle, eventDate, pdfUrl } = req.body
@@ -22,7 +22,6 @@ module.exports = async function handler(req, res) {
               l<span style="color:#8F00FF">0</span>bby<span style="color:#FF7927;font-size:0.6em">-E</span>
             </h1>
             <p style="color:#888;font-size:0.75rem;margin-bottom:2rem;">ETE Cícero Dias · Desenvolvimento de Sistemas</p>
-
             <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem;">// certificado_digital</p>
             <h2 style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:0.25rem;">${studentName.toUpperCase()}</h2>
             <p style="color:#aaa;font-size:0.85rem;margin-bottom:2rem;">
@@ -30,17 +29,14 @@ module.exports = async function handler(req, res) {
               <strong style="color:#8F00FF;font-size:1rem;">${eventTitle}</strong><br/>
               <span style="color:#888;">${eventDate || ''}</span>
             </p>
-
             <a href="${pdfUrl}"
               style="display:inline-block;background:#8F00FF;color:#fff;padding:12px 24px;text-decoration:none;font-weight:700;font-size:0.85rem;letter-spacing:0.06em;margin-bottom:1.5rem;">
               ⬇ BAIXAR CERTIFICADO PDF
             </a>
-
             <p style="color:#555;font-size:0.7rem;margin-top:0.5rem;">
               O link estará disponível permanentemente.<br/>
               Guarde-o para comprovar sua participação.
             </p>
-
             <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
               l0bby-e · ETE Cícero Dias · Recife, PE
             </div>
@@ -59,6 +55,6 @@ module.exports = async function handler(req, res) {
   }
 }
 
-module.exports.config = {
+export const config = {
   api: { bodyParser: { sizeLimit: '1mb' } }
 }
