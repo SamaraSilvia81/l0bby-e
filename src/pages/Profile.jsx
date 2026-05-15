@@ -324,9 +324,8 @@ export default function Profile() {
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                   {upcoming.map(ev => (
-                    <div key={ev.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'1rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem', flexWrap:'wrap', cursor:'pointer' }}
-                      onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
-                      <div>
+                    <div key={ev.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', padding:'1rem 1.25rem', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+                      <div style={{ flex:1, cursor:'pointer' }} onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
                         <p style={{ fontFamily:'var(--font-display)', fontWeight:900, fontSize:'1.05rem', color:'var(--text)', marginBottom:3 }}>
                           {ev.title}
                         </p>
@@ -334,9 +333,15 @@ export default function Profile() {
                           {ev.dateLabel} · {ev.location}
                         </p>
                       </div>
-                      <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700, color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 7px' }}>
-                        {ev.hours}h
-                      </span>
+                      <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                        <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700, color:'var(--v-pale)', border:'1px solid var(--v)', padding:'2px 7px' }}>
+                          {ev.hours}h
+                        </span>
+                        <button className="btn btn-ghost btn-sm"
+                          onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
+                          ver →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -367,7 +372,7 @@ export default function Profile() {
                           {ev.dateLabel} · {ev.hours}h
                         </p>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', justifyContent:'flex-end' }}>
                         <span style={{
                           fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700,
                           letterSpacing:'0.06em', padding:'2px 8px',
@@ -377,6 +382,10 @@ export default function Profile() {
                         }}>
                           {presente ? 'presente' : 'pendente'}
                         </span>
+                        <button className="btn btn-ghost btn-sm"
+                          onClick={() => { play('nav'); navigate(`/details/${ev.id}`) }}>
+                          ver →
+                        </button>
                         {presente && (
                           <button className="btn btn-v btn-sm"
                             onClick={() => { play('cert'); setCertEvent(ev) }}
