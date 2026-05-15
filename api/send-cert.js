@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { email, studentName, eventTitle, eventDate, pdfBase64 } = req.body
@@ -18,11 +18,10 @@ export default async function handler(req, res) {
         subject: `Seu certificado — ${eventTitle}`,
         html: `
           <div style="font-family:monospace;max-width:560px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#fff;border-left:4px solid #8F00FF;">
-            <h1 style="font-size:1.5rem;font-weight:900;margin-bottom:0.5rem;color:#fff;">
+            <h1 style="font-size:1.5rem;font-weight:900;margin-bottom:0.5rem;">
               l<span style="color:#8F00FF">0</span>bby<span style="color:#FF7927;font-size:0.6em">-E</span>
             </h1>
             <p style="color:#888;font-size:0.75rem;margin-bottom:2rem;">ETE Cícero Dias · Desenvolvimento de Sistemas</p>
-
             <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem;">// certificado_digital</p>
             <h2 style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:0.25rem;">${studentName.toUpperCase()}</h2>
             <p style="color:#aaa;font-size:0.85rem;margin-bottom:2rem;">
@@ -30,12 +29,7 @@ export default async function handler(req, res) {
               <strong style="color:#8F00FF;font-size:1rem;">${eventTitle}</strong><br/>
               <span style="color:#888;">${eventDate}</span>
             </p>
-
-            <p style="color:#555;font-size:0.75rem;">
-              Seu certificado está em anexo neste email em formato PDF.<br/>
-              Guarde-o para comprovar sua participação.
-            </p>
-
+            <p style="color:#555;font-size:0.75rem;">Seu certificado está em anexo neste email em formato PDF.</p>
             <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
               l0bby-e · ETE Cícero Dias · Recife, PE
             </div>
@@ -51,10 +45,10 @@ export default async function handler(req, res) {
     })
 
     const data = await response.json()
-    if (!response.ok) throw new Error(data.message || 'Resend error')
+    if (!response.ok) throw new Error(data.message || JSON.stringify(data))
     return res.status(200).json({ ok: true, id: data.id })
   } catch (err) {
-    console.error('send-cert error:', err)
+    console.error('send-cert error:', err.message)
     return res.status(500).json({ error: err.message })
   }
 }
