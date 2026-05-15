@@ -28,7 +28,9 @@ export default function Admin() {
   const [totalPresent, setTotalPresent] = useState(0)
 
   // Formulário de novo aluno
-  const [stuForm, setStuForm] = useState({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
+  const [stuForm, setStuForm] = useState({ name:'', username:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'', role:'student' })
+  const [staffForm, setStaffForm] = useState({ name:'', username:'', pass:'' })
+  const [savingStaff, setSavingStaff] = useState(false)
   const [savingStu, setSavingStu] = useState(false)
 
   // Importação em lote
@@ -68,7 +70,7 @@ export default function Admin() {
       setCertEvFilter(firstEv.id)
     }
     setCertLoading(false)
-    setStudents(stus.filter(s => s.role === 'student'))
+    setStudents(stus.filter(s => s.role !== 'admin' || true).sort((a,b) => (a.name||'').localeCompare(b.name||'')))
     setTotalInsc(allInsc.length)
     setTotalPresent(allChks.filter(c => c.status === 'presente').length)
     // Mapa: eventId → contagem inscritos
@@ -97,7 +99,14 @@ export default function Admin() {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.instructor.trim()) { play('error'); toast('Preencha título e instrutor.','error'); return }
-    if (modal === 'create') await DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
+    if (modal === 'create') {
+      const newEv = await DB.createEvent({ ...form, topics: form.topics||[], turmas: form.turmas||[] })
+      // Inscrever automaticamente todos os alunos das turmas vinculadas
+      if (newEv?.id) {
+        const count = await DB.enrollAllStudentsInEvent(newEv.id, form.turmas || [])
+        toast(`✓ ${count} aluno(s) inscritos automaticamente!`, 'info')
+      }
+    }
     else                    await DB.updateEvent(modal.id, form)
     play('success'); toast(modal==='create'?'Evento criado!':'Evento atualizado!','success')
     await refresh(); setModal(null)
@@ -171,7 +180,7 @@ export default function Admin() {
     setSavingStu(true)
     const existing = await DB.getStudentByMat(stuForm.matricula.trim())
     if (existing) { toast('Matrícula já cadastrada!','error'); setSavingStu(false); return }
-    await DB.createStudent({ ...stuForm, matricula: stuForm.matricula.trim(), name: stuForm.name.trim(), firstAccess: true })
+    await DB.createStudent({ ...stuForm, username: stuForm.username.toLowerCase().trim(), matricula: stuForm.matricula.trim(), name: stuForm.name.trim(), firstAccess: false })
     play('success'); toast('Aluno cadastrado!','success')
     setStuForm({ name:'', matricula:'', turma:'DS_MOD1_A', curso:'Desenvolvimento de Sistemas', pass:'' })
     setSavingStu(false)
@@ -354,12 +363,26 @@ export default function Admin() {
                           </span>
                         )}
                       </p>
-                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>{stu.matricula} · {stu.turma}</p>
+                      <p style={{ fontFamily:'var(--font-mono)', fontSize:'0.58rem', color:'var(--text3)' }}>
+                        {stu.username && <span style={{color:'var(--v)'}}>@{stu.username} · </span>}
+                        {stu.matricula}{stu.turma ? ` · ${stu.turma}` : ''}
+                      </p>
                     </div>
-                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
                       <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', border:'1px solid var(--border)', padding:'2px 8px' }}>
                         {stu.pass}
                       </span>
+                      <select
+                        value={stu.role || 'student'}
+                        onChange={async e => {
+                          await DB.updateStudent(stu.id, { role: e.target.value })
+                          play('click'); toast(`Role: ${e.target.value}`, 'info'); await refresh()
+                        }}
+                        style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', background:'var(--surface)', color: stu.role==='staff' ? 'var(--o)' : stu.role==='admin' ? 'var(--v)' : 'var(--text3)', border:'1px solid var(--border)', padding:'2px 6px', cursor:'pointer' }}>
+                        <option value="student">student</option>
+                        <option value="staff">staff</option>
+                        <option value="admin">admin</option>
+                      </select>
                       <button className="btn btn-danger btn-sm"
                         onClick={async () => { await DB.deleteStudent(stu.id); play('error'); toast('Aluno removido.','info'); await refresh() }}>
                         ✕

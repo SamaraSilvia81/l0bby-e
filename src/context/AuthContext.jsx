@@ -18,9 +18,10 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const login = async (matricula, pass) => {
-    const student = await DB.getStudentByMat(matricula)
-    if (!student)              return { ok: false, msg: 'Matrícula não encontrada.' }
+  const login = async (login, pass) => {
+    // Aceita username, matrícula ou COORD-xxx
+    const student = await DB.getStudentByLogin(login)
+    if (!student)              return { ok: false, msg: 'Usuário não encontrado.' }
     if (student.pass !== pass) return { ok: false, msg: 'Senha incorreta.' }
     sessionStorage.setItem('lobby_session', student.id)
     setUser(student)
@@ -42,6 +43,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, setUser, login, logout, loading, changePassword,
       isAdmin: user?.role === 'admin',
+      isStaff: user?.role === 'staff',
     }}>
       {children}
     </AuthContext.Provider>

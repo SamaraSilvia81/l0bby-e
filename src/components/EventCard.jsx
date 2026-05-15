@@ -7,7 +7,7 @@ const CAT_DOT = {
   DEVOPS:'dot-g', DADOS:'dot-p', SEGURANCA:'dot-y',
 }
 
-export default function EventCard({ event, enrolled, onEnroll, onUnenroll }) {
+export default function EventCard({ event, enrolled, onEnroll, onUnenroll, isStaff }) {
   const navigate = useNavigate()
   const { play } = useSound()
   const isClosed = event.status === 'closed'
@@ -35,9 +35,25 @@ export default function EventCard({ event, enrolled, onEnroll, onUnenroll }) {
         <div className="card-cat">
           <span className={`cat-dot ${CAT_DOT[event.category]||'dot-v'}`} />
           {catLabel}
-          {event.tipo === 'evento' && (
+          {event.tipo === 'evento' && !isStaff && (
             <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:'0.5rem', fontWeight:700, letterSpacing:'0.08em', border:'1px solid var(--o)', color:'var(--o)', padding:'1px 6px' }}>
               evento
+            </span>
+          )}
+          {!isStaff && (
+            <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:'0.5rem', fontWeight:700, letterSpacing:'0.08em',
+              border: isClosed ? '1px solid var(--border)' : '1px solid var(--v)',
+              color: isClosed ? 'var(--text3)' : 'var(--v-pale)',
+              padding:'1px 6px' }}>
+              {isClosed ? 'encerrado' : 'disponível'}
+            </span>
+          )}
+          {isStaff && (
+            <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:'0.5rem', fontWeight:700, letterSpacing:'0.08em',
+              border: isClosed ? '1px solid var(--border)' : '1px solid #00e5ff',
+              color: isClosed ? 'var(--text3)' : '#00e5ff',
+              padding:'1px 6px' }}>
+              {isClosed ? 'check-in encerrado' : 'check-in disponível'}
             </span>
           )}
         </div>
@@ -57,7 +73,17 @@ export default function EventCard({ event, enrolled, onEnroll, onUnenroll }) {
       </div>
       <div className="card-footer">
         <span className="card-hours">{event.hours}h · cert</span>
-        {isClosed ? (
+        {isStaff ? (
+          isClosed ? (
+            <button className="btn btn-ghost btn-sm" disabled>encerrado</button>
+          ) : (
+            <button className="btn btn-sm" onClick={e => { e.stopPropagation(); navigate(`/staff`) }}
+              onMouseEnter={() => play('hover')}
+              style={{ border:'1px solid #00e5ff', color:'#00e5ff', background:'rgba(0,229,255,0.06)' }}>
+              fazer check-in →
+            </button>
+          )
+        ) : isClosed ? (
           <button className="btn btn-ghost btn-sm" disabled>encerrado</button>
         ) : enrolled ? (
           <button className="btn btn-sm btn-danger" onClick={handleBtn}
