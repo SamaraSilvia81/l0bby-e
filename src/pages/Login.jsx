@@ -13,7 +13,7 @@ export default function Login() {
   const { isDark, toggle } = useTheme()
   const navigate = useNavigate()
 
-  const [tab, setTab]     = useState('login')
+  const [tab, setTab]         = useState('login')
   const [loading, setLoading] = useState(false)
 
   // login
@@ -21,12 +21,13 @@ export default function Login() {
   const [pass, setPass] = useState('')
 
   // cadastro
-  const [cNome, setCNome]       = useState('')
-  const [cMat,  setCMat]        = useState('')
-  const [cSenha, setCSenha]     = useState('')
-  const [cConfirm, setCConfirm] = useState('')
-  const [cCurso, setCCurso]     = useState('Desenvolvimento de Sistemas')
-  const [cTurma, setCTurma]     = useState('DS_MOD1_A')
+  const [cNome, setCNome]         = useState('')
+  const [cUser, setCUser]         = useState('')
+  const [cMat,  setCMat]          = useState('')
+  const [cSenha, setCSenha]       = useState('')
+  const [cConfirm, setCConfirm]   = useState('')
+  const [cCurso, setCCurso]       = useState('Desenvolvimento de Sistemas')
+  const [cTurma, setCTurma]       = useState('DS_MOD1_A')
   const [showPass, setShowPass]       = useState(false)
   const [showCPass, setShowCPass]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -41,7 +42,12 @@ export default function Login() {
       if (result.firstAccess) {
         navigate('/primeiro-acesso', { replace: true })
       } else {
-        navigate(mat.toUpperCase().startsWith('COORD') ? '/admin' : '/home')
+        // Busca o role real do usuário
+        const stu = await DB.getStudentByLogin(mat.trim())
+        const role = stu?.role || 'student'
+        if (role === 'admin') navigate('/admin', { replace: true })
+        else if (role === 'staff') navigate('/staff', { replace: true })
+        else navigate('/home', { replace: true })
       }
     } else {
       play('error'); toast(result.msg, 'error')
@@ -54,14 +60,27 @@ export default function Login() {
     play('click')
     if (cSenha !== cConfirm) { play('error'); toast('As senhas não coincidem.', 'error'); return }
     if (cSenha.length < 4)   { play('error'); toast('Senha deve ter pelo menos 4 caracteres.', 'error'); return }
+    if (!cUser.trim())        { play('error'); toast('Escolha um nome de usuário.', 'error'); return }
     setLoading(true)
     try {
-      const existing = await DB.getStudentByMat(cMat.trim())
-      if (existing) { play('error'); toast('Matrícula já cadastrada. Faça login.', 'error'); setLoading(false); return }
-      await DB.createStudent({ name: cNome.trim(), matricula: cMat.trim(), pass: cSenha, turma: cTurma, curso: cCurso, firstAccess: false })
+      const existingUser = await DB.getStudentByUsername(cUser.toLowerCase().trim())
+      if (existingUser) { play('error'); toast('Nome de usuário já em uso.', 'error'); setLoading(false); return }
+      if (cMat.trim()) {
+        const existingMat = await DB.getStudentByMat(cMat.trim())
+        if (existingMat) { play('error'); toast('Matrícula já cadastrada.', 'error'); setLoading(false); return }
+      }
+      await DB.createStudent({
+        name: cNome.trim(),
+        username: cUser.toLowerCase().trim(),
+        matricula: cMat.trim(),
+        pass: cSenha,
+        turma: cTurma,
+        curso: cCurso,
+        firstAccess: false,
+      })
       play('success'); toast('Cadastro realizado! Faça login.', 'success')
-      setTab('login'); setMat(cMat.trim())
-      setCNome(''); setCMat(''); setCSenha(''); setCConfirm('')
+      setTab('login'); setMat(cUser.toLowerCase().trim())
+      setCNome(''); setCUser(''); setCMat(''); setCSenha(''); setCConfirm('')
     } catch (err) {
       play('error'); toast('Erro ao cadastrar. Tente novamente.', 'error'); console.error(err)
     }
@@ -69,8 +88,8 @@ export default function Login() {
   }
 
   const turmasByCurso = {
-    'Desenvolvimento de Sistemas': ['DS_MOD1_A','DS_MOD1_B','DS_MOD3_A','DS_MOD3_B'],
-    'Design Gráfico': ['DG_MOD_A','DG_MOD_B','DG_MOD_ANOS'],
+    'Desenvolvimento de Sistemas': ['DS_MOD1_A','DS_MOD1_B','DS_MOD3'],
+    'Design Gráfico': ['DG_MOD_A','DG_MOD_3'],
   }
 
   const switchLabel = tab === 'login'
@@ -131,8 +150,8 @@ export default function Login() {
           {tab === 'login' ? (
             <form onSubmit={handleLogin} style={{ display:'flex', flexDirection:'column', gap:'1.1rem' }}>
               <div>
-                <label className="input-label">matrícula</label>
-                <input className="input" type="text" placeholder="2026-0041"
+                <label className="input-label">usuário ou matrícula</label>
+                <input className="input" type="text" placeholder="sams81 ou 2026-0041"
                   value={mat} onChange={e => setMat(e.target.value)} required autoFocus />
               </div>
               <div>
@@ -159,9 +178,55 @@ export default function Login() {
                   value={cNome} onChange={e => setCNome(e.target.value)} required autoFocus />
               </div>
               <div>
-                <label className="input-label">matrícula</label>
+                <label className="input-label">nome de usuário</label>
+                <input className="input" type="text" placeholder="sams81"
+                  value={cUser} onChange={e => setCUser(e.target.value.replace(/\s/g, ''))} required />
+                <span style={{ fontFamily:'var(--font-mono)', fontSize:'0.55rem', color:'var(--text3)', marginTop:4, display:'block' }}>
+                  // sem espaços · usado pra fazer login
+                </span>
+              </div>
+              <div>
+                <label className="input-label">matrícula <span style={{color:'var(--text3)'}}>( opcional )</span></label>
                 <input className="input" type="text" placeholder="2026-0041"
-                  value={cMat} onChange={e => setCMat(e.target.value)} required />
+                  value={cMat} onChange={e => setCMat(e.target.value)} />
+              </div>
+              <div>
+                <label className="input-label">curso</label>
+                <div style={{ display:'flex', gap:8 }}>
+                  {['Desenvolvimento de Sistemas', 'Design Gráfico'].map(c => (
+                    <button key={c} type="button" onClick={() => { setCCurso(c); setCTurma(turmasByCurso[c][0]) }}
+                      style={{
+                        flex:1, padding:'10px 8px',
+                        fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700,
+                        letterSpacing:'0.04em', textTransform:'uppercase',
+                        border: cCurso === c ? '1px solid var(--v)' : '1px solid var(--border)',
+                        background: cCurso === c ? 'var(--v-dim)' : 'transparent',
+                        color: cCurso === c ? 'var(--v)' : 'var(--text3)',
+                        cursor:'pointer', transition:'all 0.15s',
+                      }}>
+                      {c === 'Desenvolvimento de Sistemas' ? 'Dev. Sistemas' : 'Design Gráfico'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="input-label">turma</label>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                  {(turmasByCurso[cCurso] || []).map(t => (
+                    <button key={t} type="button" onClick={() => setCTurma(t)}
+                      style={{
+                        padding:'8px 12px',
+                        fontFamily:'var(--font-mono)', fontSize:'0.58rem', fontWeight:700,
+                        letterSpacing:'0.04em',
+                        border: cTurma === t ? '1px solid var(--v)' : '1px solid var(--border)',
+                        background: cTurma === t ? 'var(--v-dim)' : 'transparent',
+                        color: cTurma === t ? 'var(--v)' : 'var(--text3)',
+                        cursor:'pointer', transition:'all 0.15s',
+                      }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="input-label">senha</label>
@@ -192,7 +257,6 @@ export default function Login() {
             </form>
           )}
 
-          {/* troca de tab — só um link embaixo */}
           <div style={{ marginTop:'1.25rem', textAlign:'center', fontFamily:'var(--font-mono)', fontSize:'0.6rem', color:'var(--text3)' }}>
             {switchLabel.txt}{' '}
             <span style={{ color:'var(--v)', cursor:'pointer', textDecoration:'underline' }}
@@ -206,7 +270,7 @@ export default function Login() {
               <span className="tech-label" style={{ marginBottom:'0.4rem' }}>acesso</span>
               <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.62rem', color:'var(--text3)', lineHeight:2 }}>
                 <span style={{ color:'var(--o)' }}>admin  </span>COORD-001 / (sua senha)<br/>
-                <span style={{ color:'var(--v-pale)' }}>aluno  </span>matrícula / senha inicial
+                <span style={{ color:'var(--v-pale)' }}>aluno  </span>username ou matrícula / senha
               </div>
             </div>
           )}
