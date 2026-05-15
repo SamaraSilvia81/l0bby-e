@@ -63,13 +63,20 @@ export default function CertModal({ event, student, onClose }) {
       const { pdf, imgData } = await generatePDF()
       // Converter pra base64 sem header
 
-      // Gerar base64 do PDF corretamente
-      const pdfBlob = pdf.output('blob')
-      const pdfBase64 = await new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result.split(',')[1])
-        reader.readAsDataURL(pdfBlob)
+      // Gerar PDF com qualidade reduzida para email
+      const [{ default: html2canvasEmail }, { default: jsPDFEmail }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+      const canvasEmail = await html2canvasEmail(certRef.current, {
+        scale: 1.5,
+        useCORS: true,
+        backgroundColor: '#ffffff',
       })
+      const imgEmail = canvasEmail.toDataURL('image/jpeg', 0.7)
+      const pdfEmail = new jsPDFEmail({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      pdfEmail.addImage(imgEmail, 'JPEG', 0, 0, 297, 210)
+      const pdfBase64 = pdfEmail.output('datauristring').split(',')[1]
 
       const res = await fetch('/api/send-cert', {
         method: 'POST',
