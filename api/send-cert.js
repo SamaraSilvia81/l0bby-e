@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
             <p style="color:#aaa;font-size:0.85rem;margin-bottom:2rem;">
               participou e concluiu com presença confirmada o evento<br/>
               <strong style="color:#8F00FF;font-size:1rem;">${eventTitle}</strong><br/>
-              <span style="color:#888;">${eventDate}</span>
+              <span style="color:#888;">${eventDate || ''}</span>
             </p>
             <p style="color:#555;font-size:0.75rem;">Seu certificado está em anexo neste email em formato PDF.</p>
             <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
         `,
         attachments: [
           {
-            filename: `certificado-${eventTitle.toLowerCase().replace(/\s+/g,'-')}.pdf`,
+            filename: `certificado-${(eventTitle||'').toLowerCase().replace(/\s+/g,'-')}.pdf`,
             content: pdfBase64,
           }
         ],
@@ -45,10 +45,20 @@ module.exports = async function handler(req, res) {
     })
 
     const data = await response.json()
+    console.log('Resend response:', response.status, JSON.stringify(data))
     if (!response.ok) throw new Error(data.message || JSON.stringify(data))
     return res.status(200).json({ ok: true, id: data.id })
   } catch (err) {
     console.error('send-cert error:', err.message)
     return res.status(500).json({ error: err.message })
   }
+}
+
+// Aumentar limite de body para 10MB
+module.exports.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 }
