@@ -3,9 +3,9 @@ const nodemailer = require('nodemailer')
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { email, studentName, eventTitle, eventDate, imgBase64 } = req.body
+  const { email, studentName, eventTitle, eventDate, pdfBase64 } = req.body
 
-  if (!email || !imgBase64) return res.status(400).json({ error: 'Missing fields' })
+  if (!email || !pdfBase64) return res.status(400).json({ error: 'Missing fields' })
 
   try {
     const transporter = nodemailer.createTransport({
@@ -15,6 +15,8 @@ module.exports = async function handler(req, res) {
         pass: process.env.GMAIL_APP_PASSWORD,
       },
     })
+
+    const filename = `certificado-${studentName.toLowerCase().replace(/\s+/g, '-')}.pdf`
 
     await transporter.sendMail({
       from: `"L0bby-E · ETE Cícero Dias" <${process.env.GMAIL_USER}>`,
@@ -28,15 +30,12 @@ module.exports = async function handler(req, res) {
           <p style="color:#888;font-size:0.75rem;margin-bottom:2rem;">ETE Cícero Dias · Desenvolvimento de Sistemas</p>
           <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem;">// certificado_digital</p>
           <h2 style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:0.25rem;">${studentName.toUpperCase()}</h2>
-          <p style="color:#aaa;font-size:0.85rem;margin-bottom:1.5rem;">
+          <p style="color:#aaa;font-size:0.85rem;margin-bottom:2rem;">
             participou e concluiu com presença confirmada o evento<br/>
             <strong style="color:#8F00FF;font-size:1rem;">${eventTitle}</strong><br/>
             <span style="color:#888;">${eventDate || ''}</span>
           </p>
-          <p style="color:#aaa;font-size:0.8rem;margin-bottom:1rem;">Seu certificado está anexo a este email:</p>
-          <img src="cid:certificado"
-            style="width:100%;max-width:560px;display:block;border:1px solid #222;margin-bottom:1.5rem;"
-            alt="Certificado de ${studentName}" />
+          <p style="color:#aaa;font-size:0.85rem;">O certificado em PDF está anexo a este email.</p>
           <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
             l0bby-e · ETE Cícero Dias · Recife, PE
           </div>
@@ -44,10 +43,9 @@ module.exports = async function handler(req, res) {
       `,
       attachments: [
         {
-          filename: `certificado-${studentName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
-          content: Buffer.from(imgBase64, 'base64'),
-          contentType: 'image/jpeg',
-          cid: 'certificado',
+          filename,
+          content: Buffer.from(pdfBase64, 'base64'),
+          contentType: 'application/pdf',
         },
       ],
     })
@@ -60,5 +58,5 @@ module.exports = async function handler(req, res) {
 }
 
 module.exports.config = {
-  api: { bodyParser: { sizeLimit: '5mb' } }
+  api: { bodyParser: { sizeLimit: '10mb' } }
 }
