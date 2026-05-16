@@ -32,14 +32,14 @@ export default function CertModal({ event, student, onClose }) {
       import('jspdf'),
     ])
     const canvas = await html2canvas(certRef.current, {
-      scale: 3, useCORS: true, backgroundColor: '#ffffff',
+      scale: 2, useCORS: true, backgroundColor: '#ffffff',
       width: certRef.current.offsetWidth,
       height: certRef.current.offsetHeight,
     })
-    const imgData = canvas.toDataURL('image/png')
+    const imgData = canvas.toDataURL('image/jpeg', 0.85)
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    pdf.addImage(imgData, 'PNG', 0, 0, 297, 210)
-    return { pdf, imgData: imgData.replace('data:image/png;base64,', '') }
+    pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210)
+    return { pdf, imgData: imgData.replace('data:image/jpeg;base64,', '') }
   }
 
   const handleDownload = async () => {
