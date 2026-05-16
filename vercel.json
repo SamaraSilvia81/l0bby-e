@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/send-cert.cjs": {
+    "api/send-cert.js": {
       "maxDuration": 30
     }
   },
