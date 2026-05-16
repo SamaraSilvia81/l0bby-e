@@ -1,9 +1,9 @@
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { email, studentName, eventTitle, eventDate, pdfUrl } = req.body
+  const { email, studentName, eventTitle, eventDate, imgBase64 } = req.body
 
-  if (!email || !pdfUrl) return res.status(400).json({ error: 'Missing fields' })
+  if (!email || !imgBase64) return res.status(400).json({ error: 'Missing fields' })
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
         to: [email],
         subject: `Seu certificado — ${eventTitle}`,
         html: `
-          <div style="font-family:monospace;max-width:560px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#fff;border-left:4px solid #8F00FF;">
+          <div style="font-family:monospace;max-width:600px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#fff;border-left:4px solid #8F00FF;">
             <h1 style="font-size:1.5rem;font-weight:900;margin-bottom:0.5rem;">
               l<span style="color:#8F00FF">0</span>bby<span style="color:#FF7927;font-size:0.6em">-E</span>
             </h1>
@@ -29,18 +29,21 @@ module.exports = async function handler(req, res) {
               <strong style="color:#8F00FF;font-size:1rem;">${eventTitle}</strong><br/>
               <span style="color:#888;">${eventDate || ''}</span>
             </p>
-            <a href="${pdfUrl}"
-              style="display:inline-block;background:#8F00FF;color:#fff;padding:12px 24px;text-decoration:none;font-weight:700;font-size:0.85rem;letter-spacing:0.06em;margin-bottom:1.5rem;">
-              ⬇ BAIXAR CERTIFICADO PDF
-            </a>
-            <p style="color:#555;font-size:0.7rem;margin-top:0.5rem;">
-              O link estará disponível permanentemente.
-            </p>
+            <p style="color:#aaa;font-size:0.8rem;margin-bottom:1rem;">Seu certificado está anexo a este email e também exibido abaixo:</p>
+            <img src="data:image/jpeg;base64,${imgBase64}"
+              style="width:100%;max-width:560px;display:block;border:1px solid #222;margin-bottom:1.5rem;"
+              alt="Certificado de ${studentName}" />
             <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #222;color:#555;font-size:0.65rem;">
               l0bby-e · ETE Cícero Dias · Recife, PE
             </div>
           </div>
         `,
+        attachments: [
+          {
+            filename: `certificado-${studentName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
+            content: imgBase64,
+          }
+        ],
       }),
     })
 
@@ -55,5 +58,5 @@ module.exports = async function handler(req, res) {
 }
 
 module.exports.config = {
-  api: { bodyParser: { sizeLimit: '1mb' } }
+  api: { bodyParser: { sizeLimit: '5mb' } }
 }
